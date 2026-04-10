@@ -1,0 +1,111 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model AdminUser {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  name         String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model Product {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  name        String
+  status      String   @default("Активен")
+  category    String
+  brand       String   @default("")
+  size        String   @default("")
+  centimeters String   @default("")
+  ageGroup    String   @default("")
+  audience    String   @default("")
+  season      String   @default("")
+  price       Float
+  oldPrice    Float?
+  stock       Int      @default(0)
+  material    String   @default("")
+  colors      Json
+  badge       String?
+  description String   @default("")
+  image       String
+  images      Json     @default("[]")
+  features    Json
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Post {
+  id           String   @id @default(cuid())
+  slug         String   @unique
+  title        String
+  category     String
+  excerpt      String
+  cover        String
+  content      Json
+  contentBlocks Json?
+  published    Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model Category {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Brand {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Season {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Order {
+  id               String   @id @default(cuid())
+  orderNumber      Int      @unique
+  customerName     String
+  phone            String
+  email            String
+  comment          String   @default("")
+  deliveryMethod   String
+  paymentMethod    String
+  region           String   @default("")
+  city             String   @default("")
+  novaPoshtaType   String   @default("")
+  novaPoshtaBranch String   @default("")
+  courierAddress   String   @default("")
+  status           String
+  total            Float
+  items            Json
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
+
+model Client {
+  id           String   @id @default(cuid())
+  name         String
+  phone        String
+  email        String
+  orderIds     Json
+  orderNumbers Json
+  totalSpent   Float    @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}

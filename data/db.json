@@ -1,0 +1,352 @@
+{
+  "adminUsers": [
+    {
+      "id": "e722bbae-a535-49c4-a612-e1d9bc1ba594",
+      "email": "admin@standardshop.local",
+      "passwordHash": "$2b$10$DNDkUKKdSx4P146CSdoO/.3vIdfJKxVLTUAkI./b7O00heD/Jc9yO",
+      "name": "Store Admin",
+      "createdAt": "2026-03-30T14:19:37.584Z",
+      "updatedAt": "2026-03-30T14:19:37.584Z"
+    }
+  ],
+  "categories": [
+    "Хит",
+    "Новинки",
+    "Аксессуары",
+    "одежда",
+    "обувь",
+    "апапрпар",
+    "рлрл"
+  ],
+  "brands": [
+    "Без бренда",
+    "Тест",
+    "апрап"
+  ],
+  "products": [
+    {
+      "id": "105681d8-5ffb-44db-8e96-436b51b9297d",
+      "name": "ллрлррл",
+      "slug": "llrlrrl",
+      "category": "Аксессуары",
+      "brand": "Тест",
+      "size": "рлрлрл",
+      "centimeters": "рлрл",
+      "ageGroup": "рлр",
+      "audience": "рлрл",
+      "season": "весна осень",
+      "price": 0,
+      "oldPrice": 0,
+      "stock": 0,
+      "material": "вафвфв",
+      "colors": [
+        "серый",
+        "красный",
+        "черный"
+      ],
+      "badge": null,
+      "description": "рголргл",
+      "image": "/images/product-placeholder.svg",
+      "features": [
+        "ауауыа",
+        "выавыа",
+        "ываывваы"
+      ],
+      "createdAt": "2026-04-01T12:08:36.860Z",
+      "updatedAt": "2026-04-01T12:54:16.821Z"
+    },
+    {
+      "id": "19215fd5-5a44-494f-b9de-4cfc81b35191",
+      "name": "парпарапра",
+      "slug": "parparapra",
+      "category": "апапрпар",
+      "brand": "апрап",
+      "size": "апра",
+      "centimeters": "апрар",
+      "ageGroup": "апрар",
+      "audience": "арпапрпа",
+      "season": "арпап",
+      "price": 0,
+      "oldPrice": 0,
+      "stock": 8,
+      "material": "парар",
+      "colors": [
+        "арра"
+      ],
+      "badge": "апрар",
+      "description": "апрапрапр",
+      "image": "/images/product-placeholder.svg",
+      "features": [
+        "апраара",
+        "арпрарпа",
+        "апрапр",
+        "апрара"
+      ],
+      "createdAt": "2026-04-01T11:48:26.735Z",
+      "updatedAt": "2026-04-01T13:14:53.529Z"
+    },
+    {
+      "id": "d8a6d135-656a-4750-9662-d33035a5474a",
+      "slug": "aurora-lamp",
+      "name": "Aurora Lamp",
+      "category": "Хит",
+      "price": 2490,
+      "oldPrice": 2990,
+      "stock": 18,
+      "material": "Алюминий",
+      "color": "Песочный",
+      "badge": "Топ продаж",
+      "description": "Универсальная карточка товара для любой ниши: декор, техника, аксессуары или косметика.",
+      "image": "https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?auto=format&fit=crop&w=1200&q=80",
+      "features": [
+        "3 режима подсветки",
+        "Гарантия 12 месяцев",
+        "Быстрая доставка"
+      ],
+      "createdAt": "2026-03-30T14:19:37.584Z",
+      "updatedAt": "2026-03-30T14:19:37.584Z",
+      "brand": "Без бренда",
+      "size": "Не указан",
+      "centimeters": "Не указаны",
+      "ageGroup": "Без возрастного ограничения",
+      "audience": "Подходит всем",
+      "season": "Всесезонный",
+      "colors": [
+        "Песочный"
+      ]
+    },
+    {
+      "id": "16283ebf-9630-4b5e-b7ac-4d5d510abc9a",
+      "slug": "mono-speaker",
+      "name": "Mono Speaker",
+      "category": "Новинки",
+      "price": 3190,
+      "oldPrice": null,
+      "stock": 9,
+      "material": "Ткань",
+      "color": "Графит",
+      "badge": "New",
+      "description": "Пример подачи технологичного продукта с акцентом на характеристики и стиль.",
+      "image": "https://images.unsplash.com/photo-1512446733611-9099a758e0b0?auto=format&fit=crop&w=1200&q=80",
+      "features": [
+        "Bluetooth 5.3",
+        "До 18 часов автономности",
+        "IPX5"
+      ],
+      "createdAt": "2026-03-30T14:19:37.584Z",
+      "updatedAt": "2026-03-30T14:19:37.584Z",
+      "brand": "Без бренда",
+      "size": "Не указан",
+      "centimeters": "Не указаны",
+      "ageGroup": "Без возрастного ограничения",
+      "audience": "Подходит всем",
+      "season": "Всесезонный",
+      "colors": [
+        "Графит"
+      ]
+    },
+    {
+      "id": "0d5b9f85-f93d-4ca7-b8ca-285f293ced25",
+      "slug": "terra-bottle",
+      "name": "Terra Bottle",
+      "category": "Аксессуары",
+      "price": 890,
+      "oldPrice": null,
+      "stock": 42,
+      "material": "Сталь",
+      "color": "Оливковый",
+      "badge": null,
+      "description": "Хороший пример адаптации шаблона под аксессуары, спорттовары или lifestyle-продукты.",
+      "image": "https://images.unsplash.com/photo-1602143407151-7111542de6e8?auto=format&fit=crop&w=1200&q=80",
+      "features": [
+        "750 мл",
+        "Термоэффект 12 часов",
+        "Без BPA"
+      ],
+      "createdAt": "2026-03-30T14:19:37.584Z",
+      "updatedAt": "2026-03-30T14:19:37.584Z",
+      "brand": "Без бренда",
+      "size": "Не указан",
+      "centimeters": "Не указаны",
+      "ageGroup": "Без возрастного ограничения",
+      "audience": "Подходит всем",
+      "season": "Всесезонный",
+      "colors": [
+        "Оливковый"
+      ]
+    }
+  ],
+  "posts": [
+    {
+      "id": "2aef6439-0c88-4869-8d06-33fe0b11ff91",
+      "title": "Новость 1",
+      "slug": "news1",
+      "category": "Блог",
+      "excerpt": "https://sadyperemohy.com/image/cache/catalog/products/2000016813067_1-800x1000.jpg",
+      "cover": "https://sadyperemohy.com/image/cache/catalog/products/2000016813067_1-800x1000.jpg",
+      "content": [
+        "Присоединяйтесь к нам и получите доступ к закрытым распродажам"
+      ],
+      "published": true,
+      "createdAt": "2026-03-31T18:52:04.589Z",
+      "updatedAt": "2026-03-31T18:52:04.589Z",
+      "contentBlocks": [
+        {
+          "id": "d0815b27-1a0d-4e18-8c48-18d2dfa4e7ef",
+          "type": "paragraph",
+          "text": "Присоединяйтесь к нам и получите доступ к закрытым распродажам",
+          "align": "left"
+        }
+      ]
+    },
+    {
+      "id": "40e3b8f1-a31e-40c6-8fe0-4dd9665b9c88",
+      "slug": "adapt-template-any-niche",
+      "title": "Как адаптировать шаблон под любую товарную нишу",
+      "category": "Маркетинг",
+      "excerpt": "Что менять в первую очередь, если вы продаете другой продукт и хотите быстро стартовать.",
+      "cover": "https://images.unsplash.com/photo-1517048676732-d65bc937f952?auto=format&fit=crop&w=1200&q=80",
+      "content": [
+        "Начните с главного hero-блока и ключевого предложения бренда.",
+        "После этого адаптируйте фильтры каталога, характеристики товара и юридические страницы."
+      ],
+      "published": true,
+      "createdAt": "2026-03-30T14:19:37.584Z",
+      "updatedAt": "2026-03-30T14:19:37.584Z",
+      "contentBlocks": [
+        {
+          "id": "e4966f1c-2802-4a66-a58c-54260fe314e8",
+          "type": "paragraph",
+          "text": "Начните с главного hero-блока и ключевого предложения бренда.",
+          "align": "left"
+        },
+        {
+          "id": "bb7da514-7d7b-48ad-89c5-8ddba33f14bd",
+          "type": "paragraph",
+          "text": "После этого адаптируйте фильтры каталога, характеристики товара и юридические страницы.",
+          "align": "left"
+        }
+      ]
+    },
+    {
+      "id": "90f49c16-8b6e-45ff-991d-52491e4468a6",
+      "slug": "must-have-pages",
+      "title": "Какие страницы нужны стандартному интернет-магазину",
+      "category": "Бизнес",
+      "excerpt": "Короткий чеклист обязательных страниц, которые повышают доверие и упрощают запуск.",
+      "cover": "https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?auto=format&fit=crop&w=1200&q=80",
+      "content": [
+        "Кроме каталога и карточки товара, важно иметь контакты, блог, политику конфиденциальности и оферту.",
+        "В этом шаблоне все эти маршруты уже предусмотрены, поэтому можно сосредоточиться на бизнес-логике."
+      ],
+      "published": true,
+      "createdAt": "2026-03-30T14:19:37.584Z",
+      "updatedAt": "2026-03-30T14:19:37.584Z",
+      "contentBlocks": [
+        {
+          "id": "d902c608-af1c-4aef-92da-3824c96abb98",
+          "type": "paragraph",
+          "text": "Кроме каталога и карточки товара, важно иметь контакты, блог, политику конфиденциальности и оферту.",
+          "align": "left"
+        },
+        {
+          "id": "b8309512-16d5-4545-9b18-458bc1e27ced",
+          "type": "paragraph",
+          "text": "В этом шаблоне все эти маршруты уже предусмотрены, поэтому можно сосредоточиться на бизнес-логике.",
+          "align": "left"
+        }
+      ]
+    }
+  ],
+  "orders": [
+    {
+      "id": "45f8c6ef-eae4-4afe-bb0c-3c478fb1f893",
+      "orderNumber": 2,
+      "customerName": "марина",
+      "phone": "+380 00 340 35 40",
+      "email": "mfedotova151@gmail.com",
+      "comment": "Вмавм",
+      "deliveryMethod": "Новая почта",
+      "paymentMethod": "Наложенный платеж",
+      "region": "Kyiv",
+      "city": "Львів",
+      "novaPoshtaType": "Отделение",
+      "novaPoshtaBranch": "59",
+      "courierAddress": "",
+      "status": "Новый",
+      "total": 3380,
+      "items": [
+        {
+          "productId": "d8a6d135-656a-4750-9662-d33035a5474a",
+          "name": "Aurora Lamp",
+          "price": 2490,
+          "quantity": 1
+        },
+        {
+          "productId": "0d5b9f85-f93d-4ca7-b8ca-285f293ced25",
+          "name": "Terra Bottle",
+          "price": 890,
+          "quantity": 1
+        }
+      ],
+      "createdAt": "2026-04-06T15:26:28.823Z",
+      "updatedAt": "2026-04-06T15:26:28.823Z"
+    },
+    {
+      "id": "f2eec034-bc46-4e03-bc3a-d07c109bdf33",
+      "customerName": "тесст",
+      "phone": "65465416",
+      "email": "mfedotova151@gmail.com",
+      "comment": "стстс",
+      "deliveryMethod": "Новая почта",
+      "paymentMethod": "Наложенный платеж",
+      "status": "Новый",
+      "total": 890,
+      "items": [
+        {
+          "productId": "105681d8-5ffb-44db-8e96-436b51b9297d",
+          "name": "ллрлррл",
+          "price": 0,
+          "quantity": 1
+        },
+        {
+          "productId": "19215fd5-5a44-494f-b9de-4cfc81b35191",
+          "name": "парпарапра",
+          "price": 0,
+          "quantity": 1
+        },
+        {
+          "productId": "0d5b9f85-f93d-4ca7-b8ca-285f293ced25",
+          "name": "Terra Bottle",
+          "price": 890,
+          "quantity": 1
+        }
+      ],
+      "createdAt": "2026-04-01T13:00:42.308Z",
+      "updatedAt": "2026-04-01T13:00:42.308Z",
+      "orderNumber": 1,
+      "region": "",
+      "city": "",
+      "novaPoshtaType": "",
+      "novaPoshtaBranch": "",
+      "courierAddress": ""
+    }
+  ],
+  "clients": [
+    {
+      "id": "e91bb212-37ef-409f-b9fb-86e1919b3b6f",
+      "name": "марина",
+      "phone": "+380 00 340 35 40",
+      "email": "mfedotova151@gmail.com",
+      "orderIds": [
+        "45f8c6ef-eae4-4afe-bb0c-3c478fb1f893"
+      ],
+      "orderNumbers": [
+        2
+      ],
+      "totalSpent": 3380,
+      "createdAt": "2026-04-06T15:26:28.823Z",
+      "updatedAt": "2026-04-06T15:26:28.823Z"
+    }
+  ]
+}
