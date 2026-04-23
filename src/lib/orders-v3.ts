@@ -8,6 +8,7 @@ export type CreateOrderInput = {
   phone: string;
   email: string;
   comment?: string;
+  managerComment?: string;
   deliveryMethod: string;
   paymentMethod: string;
   region?: string;
@@ -31,6 +32,7 @@ export async function createOrder(input: CreateOrderInput) {
     phone: input.phone,
     email: input.email,
     comment: input.comment ?? "",
+    managerComment: input.managerComment ?? "",
     deliveryMethod: input.deliveryMethod,
     paymentMethod: input.paymentMethod,
     region: input.region ?? "",
@@ -46,39 +48,11 @@ export async function createOrder(input: CreateOrderInput) {
   };
 
   db.orders.unshift(order);
-  upsertClientFromOrder(db.clients, order);
+  rebuildClientsFromOrders(db.clients, db.orders);
   await writeDb(db);
   await Promise.allSettled([sendOrderEmail(order), sendOrderTelegram(order)]);
 
   return order;
-}
-
-function upsertClientFromOrder(clients: DbClient[], order: DbOrder) {
-  const normalizedPhone = normalizePhone(order.phone);
-  const client = clients.find((item) => normalizePhone(item.phone) === normalizedPhone);
-
-  if (client) {
-    client.name = order.customerName;
-    client.phone = order.phone;
-    client.email = order.email;
-    client.orderIds = Array.from(new Set([order.id, ...client.orderIds]));
-    client.orderNumbers = Array.from(new Set([order.orderNumber, ...(client.orderNumbers ?? [])])).sort((a, b) => a - b);
-    client.totalSpent += order.total;
-    client.updatedAt = order.updatedAt;
-    return;
-  }
-
-  clients.unshift({
-    id: randomUUID(),
-    name: order.customerName,
-    phone: order.phone,
-    email: order.email,
-    orderIds: [order.id],
-    orderNumbers: [order.orderNumber],
-    totalSpent: order.total,
-    createdAt: order.createdAt,
-    updatedAt: order.updatedAt
-  });
 }
 
 function normalizePhone(phone: string) {
@@ -106,6 +80,77 @@ export async function updateOrderStatus(orderId: string, status: OrderStatus) {
 
   await writeDb(db);
   return db.orders[index];
+}
+
+export async function updateOrder(
+  orderId: string,
+  input: CreateOrderInput & { status: OrderStatus }
+) {
+  const db = await readDb();
+  const index = db.orders.findIndex((item) => item.id === orderId);
+
+  if (index === -1) {
+    return null;
+  }
+
+  const now = stampNow();
+  const total = input.items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  const currentOrder = db.orders[index];
+
+  db.orders[index] = {
+    ...currentOrder,
+    customerName: input.customerName,
+    phone: input.phone,
+    email: input.email,
+    comment: input.comment ?? "",
+    managerComment: input.managerComment ?? "",
+    deliveryMethod: input.deliveryMethod,
+    paymentMethod: input.paymentMethod,
+    region: input.region ?? "",
+    city: input.city ?? "",
+    novaPoshtaType: input.novaPoshtaType ?? "",
+    novaPoshtaBranch: input.novaPoshtaBranch ?? "",
+    courierAddress: input.courierAddress ?? "",
+    status: input.status,
+    items: input.items,
+    total,
+    updatedAt: now
+  };
+
+  rebuildClientsFromOrders(db.clients, db.orders);
+  await writeDb(db);
+  return db.orders[index];
+}
+
+function rebuildClientsFromOrders(clients: DbClient[], orders: DbOrder[]) {
+  const previousIds = new Map(
+    clients.map((client) => [normalizePhone(client.phone), client.id] as const)
+  );
+
+  const grouped = new Map<string, DbOrder[]>();
+  for (const order of [...orders].sort((a, b) => a.createdAt.localeCompare(b.createdAt))) {
+    const phone = normalizePhone(order.phone);
+    const current = grouped.get(phone) ?? [];
+    current.push(order);
+    grouped.set(phone, current);
+  }
+
+  const rebuiltClients: DbClient[] = Array.from(grouped.entries()).map(([phone, phoneOrders]) => {
+    const latestOrder = [...phoneOrders].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))[0];
+    return {
+      id: previousIds.get(phone) ?? randomUUID(),
+      name: latestOrder.customerName,
+      phone: latestOrder.phone,
+      email: latestOrder.email,
+      orderIds: phoneOrders.map((order) => order.id),
+      orderNumbers: phoneOrders.map((order) => order.orderNumber).sort((a, b) => a - b),
+      totalSpent: phoneOrders.reduce((sum, order) => sum + order.total, 0),
+      createdAt: phoneOrders[0]?.createdAt ?? latestOrder.createdAt,
+      updatedAt: latestOrder.updatedAt
+    };
+  });
+
+  clients.splice(0, clients.length, ...rebuiltClients.sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)));
 }
 
 function formatOrderText(order: DbOrder) {

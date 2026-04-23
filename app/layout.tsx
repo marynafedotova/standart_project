@@ -1,4 +1,4 @@
-import "./globals.css";
+﻿import "./globals.css";
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import { ShopStateProvider } from "@/components/shop-state";
@@ -14,7 +14,7 @@ export default function RootLayout({
   children: ReactNode;
 }>) {
   return (
-    <html lang="uk">
+    <html lang="uk" data-scroll-behavior="smooth">
       <body>
         <ShopStateProvider>{children}</ShopStateProvider>
       </body>

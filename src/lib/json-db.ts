@@ -10,6 +10,7 @@ export type DbProduct = {
   sku: string;
   slug: string;
   name: string;
+  nameI18n?: Record<string, string>;
   status: string;
   category: string;
   brand: string;
@@ -25,6 +26,7 @@ export type DbProduct = {
   colors: string[];
   badge: string | null;
   description: string;
+  descriptionI18n?: Record<string, string>;
   image: string;
   images: string[];
   features: string[];
@@ -49,8 +51,10 @@ export type DbPost = {
   id: string;
   slug: string;
   title: string;
+  titleI18n?: Record<string, string>;
   category: string;
   excerpt: string;
+  excerptI18n?: Record<string, string>;
   cover: string;
   content: string[];
   contentBlocks?: DbPostBlock[];
@@ -82,6 +86,7 @@ export type DbOrder = {
   phone: string;
   email: string;
   comment: string;
+  managerComment: string;
   deliveryMethod: string;
   paymentMethod: string;
   region: string;
@@ -135,6 +140,18 @@ function asNumberArray(value: unknown): number[] {
   return Array.isArray(value) ? value.filter((item): item is number => typeof item === "number") : [];
 }
 
+function asLocaleMap(value: unknown): Record<string, string> | undefined {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return undefined;
+  }
+
+  const entries = Object.entries(value).filter((entry): entry is [string, string] => typeof entry[1] === "string" && entry[1].trim().length > 0);
+  if (entries.length === 0) {
+    return undefined;
+  }
+
+  return Object.fromEntries(entries);
+}
 function asPostBlocks(value: unknown, content: string[]): DbPostBlock[] {
   if (Array.isArray(value)) {
     return value.filter((item): item is DbPostBlock => Boolean(item && typeof item === "object" && "type" in item));
@@ -183,6 +200,7 @@ function mapProduct(product: NonNullable<ProductRecord>, skuMap: Map<string, str
     sku: skuMap.get(product.id) ?? "0000-0",
     slug: product.slug,
     name: product.name,
+    nameI18n: asLocaleMap((product as { nameI18n?: unknown }).nameI18n),
     status: product.status || (product.stock > 0 ? "Активен" : "Нет в наличии"),
     category: product.category,
     brand: product.brand || "Без бренда",
@@ -198,6 +216,7 @@ function mapProduct(product: NonNullable<ProductRecord>, skuMap: Map<string, str
     colors: asStringArray(product.colors),
     badge: product.badge ?? null,
     description: product.description || "",
+    descriptionI18n: asLocaleMap((product as { descriptionI18n?: unknown }).descriptionI18n),
     image: product.image || DEFAULT_PRODUCT_IMAGE,
     images: uniqueImages([product.image || DEFAULT_PRODUCT_IMAGE, ...asStringArray(product.images)]),
     features: asStringArray(product.features),
@@ -213,8 +232,10 @@ function mapPost(post: NonNullable<PostRecord>): DbPost {
     id: post.id,
     slug: post.slug,
     title: post.title,
+    titleI18n: asLocaleMap((post as { titleI18n?: unknown }).titleI18n),
     category: post.category,
     excerpt: post.excerpt,
+    excerptI18n: asLocaleMap((post as { excerptI18n?: unknown }).excerptI18n),
     cover: post.cover,
     content,
     contentBlocks: asPostBlocks(post.contentBlocks, content),
@@ -227,6 +248,7 @@ function mapPost(post: NonNullable<PostRecord>): DbPost {
 function mapOrder(order: NonNullable<OrderRecord>): DbOrder {
   const items = Array.isArray(order.items) ? (order.items as DbOrderItem[]) : [];
   const calculatedTotal = calculateOrderTotal(items);
+  const managerComment = (order as { managerComment?: string }).managerComment ?? "";
 
   return {
     id: order.id,
@@ -235,6 +257,7 @@ function mapOrder(order: NonNullable<OrderRecord>): DbOrder {
     phone: order.phone,
     email: order.email,
     comment: order.comment,
+    managerComment,
     deliveryMethod: order.deliveryMethod,
     paymentMethod: order.paymentMethod,
     region: order.region,
@@ -449,6 +472,13 @@ export async function writeDb(data: Database) {
           updatedAt: new Date(product.updatedAt)
         }
       });
+      await tx.$executeRaw`
+        UPDATE "Product"
+        SET
+          "nameI18n" = ${JSON.stringify(product.nameI18n ?? null)}::jsonb,
+          "descriptionI18n" = ${JSON.stringify(product.descriptionI18n ?? null)}::jsonb
+        WHERE "id" = ${product.id}
+      `;
     }
 
     for (const post of data.posts) {
@@ -467,6 +497,13 @@ export async function writeDb(data: Database) {
           updatedAt: new Date(post.updatedAt)
         }
       });
+      await tx.$executeRaw`
+        UPDATE "Post"
+        SET
+          "titleI18n" = ${JSON.stringify(post.titleI18n ?? null)}::jsonb,
+          "excerptI18n" = ${JSON.stringify(post.excerptI18n ?? null)}::jsonb
+        WHERE "id" = ${post.id}
+      `;
     }
 
     for (const order of data.orders) {
@@ -492,6 +529,11 @@ export async function writeDb(data: Database) {
           updatedAt: new Date(order.updatedAt)
         }
       });
+      await tx.$executeRaw`
+        UPDATE "Order"
+        SET "managerComment" = ${order.managerComment}
+        WHERE "id" = ${order.id}
+      `;
     }
 
     for (const client of data.clients) {
@@ -515,5 +557,6 @@ export async function writeDb(data: Database) {
 export function stampNow() {
   return new Date().toISOString();
 }
+
 
 

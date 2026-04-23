@@ -6,6 +6,7 @@ type AdminProduct = {
   id: string;
   sku: string;
   name: string;
+  nameI18n?: Record<string, string>;
   slug: string;
   status: string;
   category: string;
@@ -22,6 +23,7 @@ type AdminProduct = {
   colors: string[];
   badge: string | null;
   description: string;
+  descriptionI18n?: Record<string, string>;
   image: string;
   images: string[];
   features: string[];
@@ -30,9 +32,11 @@ type AdminProduct = {
 type AdminPost = {
   id: string;
   title: string;
+  titleI18n?: Record<string, string>;
   slug: string;
   category: string;
   excerpt: string;
+  excerptI18n?: Record<string, string>;
   cover: string;
   content: string[];
   contentBlocks?: DbPostBlock[];
@@ -172,3 +176,4 @@ function formatDate(date: Date) {
 }
 
 export type { AdminPost, AdminProduct };
+

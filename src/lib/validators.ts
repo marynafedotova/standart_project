@@ -12,6 +12,18 @@ const imagePathSchema = z
   .string()
   .trim()
   .refine((value) => value.startsWith("/") || /^https?:\/\//.test(value), "Image must be a root-relative path or absolute URL");
+const translationMapSchema = z
+  .object({
+    uk: z.string().trim().optional(),
+    ru: z.string().trim().optional(),
+    en: z.string().trim().optional()
+  })
+  .optional()
+  .transform((value) => {
+    if (!value) return undefined;
+    const normalized = Object.fromEntries(Object.entries(value).filter(([, item]) => item && item.trim().length > 0));
+    return Object.keys(normalized).length > 0 ? normalized : undefined;
+  });
 const imageValueSchema = z
   .string()
   .trim()
@@ -31,7 +43,8 @@ export const loginSchema = z.object({
 export const productSchema = z.object({
   name: z.string().min(2),
   slug: z.string().min(2).default("product"),
-  status: z.enum(["Активен", "Черновик", "Нет в наличии"]).default("Активен"),
+  status: z.enum(["Активен", "Черновик", "Нет в наличии", "Брак"]).default("Активен"),
+  nameI18n: translationMapSchema,
   category: multiValueSchema,
   brand: optionalText,
   size: optionalText,
@@ -53,6 +66,7 @@ export const productSchema = z.object({
   ),
   badge: z.string().optional().nullable(),
   description: optionalText,
+  descriptionI18n: translationMapSchema,
   image: imageValueSchema,
   images: z
     .union([stringList, z.string().trim().optional().default("")])
@@ -80,7 +94,9 @@ export const postSchema = z.object({
   title: z.string().min(4),
   slug: z.string().min(2),
   category: z.string().min(2),
+  titleI18n: translationMapSchema,
   excerpt: z.string().min(10),
+  excerptI18n: translationMapSchema,
   cover: imagePathSchema,
   content: z.union([stringList, z.string().min(1)]).transform((value) =>
     Array.isArray(value)

@@ -15,9 +15,17 @@ import { slugify } from "@/lib/slug";
 
 type PostFormState = {
   title: string;
+  titleI18n: {
+    ru: string;
+    en: string;
+  };
   slug: string;
   category: string;
   excerpt: string;
+  excerptI18n: {
+    ru: string;
+    en: string;
+  };
   cover: string;
   published: boolean;
 };
@@ -28,9 +36,17 @@ export function AdminPostEditorV2({ post }: { post: AdminPost | null }) {
   const [slugEdited, setSlugEdited] = useState(Boolean(post?.slug));
   const [form, setForm] = useState<PostFormState>({
     title: post?.title ?? "",
+    titleI18n: {
+      ru: post?.titleI18n?.ru ?? "",
+      en: post?.titleI18n?.en ?? ""
+    },
     slug: post?.slug ?? "",
     category: post?.category ?? "",
     excerpt: post?.excerpt ?? "",
+    excerptI18n: {
+      ru: post?.excerptI18n?.ru ?? "",
+      en: post?.excerptI18n?.en ?? ""
+    },
     cover: post?.cover ?? "",
     published: post?.published ?? true
   });
@@ -79,9 +95,17 @@ export function AdminPostEditorV2({ post }: { post: AdminPost | null }) {
 
     const payload = {
       title: form.title,
+      titleI18n: {
+        ru: form.titleI18n.ru.trim(),
+        en: form.titleI18n.en.trim()
+      },
       slug: form.slug,
       category: form.category,
       excerpt: form.excerpt,
+      excerptI18n: {
+        ru: form.excerptI18n.ru.trim(),
+        en: form.excerptI18n.en.trim()
+      },
       cover: form.cover,
       published: form.published,
       contentBlocks: [
@@ -207,6 +231,30 @@ export function AdminPostEditorV2({ post }: { post: AdminPost | null }) {
         <div className="panel formGrid">
           <h2>Основное</h2>
           <input value={form.title} onChange={(event) => updateTitle(event.target.value)} type="text" placeholder="Заголовок поста" required />
+          <div className="splitGrid">
+            <input
+              value={form.titleI18n.ru}
+              onChange={(event) =>
+                setForm((current) => ({
+                  ...current,
+                  titleI18n: { ...current.titleI18n, ru: event.target.value }
+                }))
+              }
+              type="text"
+              placeholder="Заголовок на русском"
+            />
+            <input
+              value={form.titleI18n.en}
+              onChange={(event) =>
+                setForm((current) => ({
+                  ...current,
+                  titleI18n: { ...current.titleI18n, en: event.target.value }
+                }))
+              }
+              type="text"
+              placeholder="Post title in English"
+            />
+          </div>
           <input
             value={form.slug}
             onChange={(event) => {
@@ -219,6 +267,30 @@ export function AdminPostEditorV2({ post }: { post: AdminPost | null }) {
           />
           <input value={form.category} onChange={(event) => updateForm("category", event.target.value)} type="text" placeholder="Категория" required />
           <textarea value={form.excerpt} onChange={(event) => updateForm("excerpt", event.target.value)} rows={4} placeholder="Краткое описание для карточки поста" required />
+          <div className="splitGrid">
+            <textarea
+              value={form.excerptI18n.ru}
+              onChange={(event) =>
+                setForm((current) => ({
+                  ...current,
+                  excerptI18n: { ...current.excerptI18n, ru: event.target.value }
+                }))
+              }
+              rows={4}
+              placeholder="Краткое описание на русском"
+            />
+            <textarea
+              value={form.excerptI18n.en}
+              onChange={(event) =>
+                setForm((current) => ({
+                  ...current,
+                  excerptI18n: { ...current.excerptI18n, en: event.target.value }
+                }))
+              }
+              rows={4}
+              placeholder="Post excerpt in English"
+            />
+          </div>
         </div>
 
         <div className="panel formGrid">
@@ -357,3 +429,4 @@ function escapeHtml(value: string) {
 function escapeAttribute(value: string) {
   return escapeHtml(value).replaceAll("'", "&#39;");
 }
+

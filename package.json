@@ -3,6 +3,7 @@
   "private": true,
   "version": "0.1.0",
   "scripts": {
+    "postinstall": "prisma generate",
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
@@ -21,6 +22,7 @@
     "bcryptjs": "^3.0.2",
     "jose": "^6.0.10",
     "next": "^15.2.4",
+    "next-intl": "^4.9.1",
     "nodemailer": "^6.10.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",

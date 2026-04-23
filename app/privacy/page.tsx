@@ -3,7 +3,8 @@
 export default function PrivacyPage() {
   return (
     <StoreShell>
-      <LegalSections title="Политика конфиденциальности" />
+      <LegalSections titleKey="Shell.privacy" />
     </StoreShell>
   );
 }
+

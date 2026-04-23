@@ -20,7 +20,8 @@ model Product {
   id          String   @id @default(cuid())
   slug        String   @unique
   name        String
-  status      String   @default("Активен")
+  nameI18n    Json?
+  status      String   @default("РђРєС‚РёРІРµРЅ")
   category    String
   brand       String   @default("")
   size        String   @default("")
@@ -35,6 +36,7 @@ model Product {
   colors      Json
   badge       String?
   description String   @default("")
+  descriptionI18n Json?
   image       String
   images      Json     @default("[]")
   features    Json
@@ -46,8 +48,10 @@ model Post {
   id           String   @id @default(cuid())
   slug         String   @unique
   title        String
+  titleI18n    Json?
   category     String
   excerpt      String
+  excerptI18n  Json?
   cover        String
   content      Json
   contentBlocks Json?
@@ -84,6 +88,7 @@ model Order {
   phone            String
   email            String
   comment          String   @default("")
+  managerComment   String   @default("")
   deliveryMethod   String
   paymentMethod    String
   region           String   @default("")
@@ -109,3 +114,4 @@ model Client {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 }
+

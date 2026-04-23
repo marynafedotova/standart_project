@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { LogoutButton } from "@/components/admin-forms";
+import { ORDER_STATUSES } from "@/lib/order-statuses";
 
 type ProductOption = {
   id: string;
@@ -17,6 +18,30 @@ type OrderLine = {
   search: string;
 };
 
+type EditableOrder = {
+  id: string;
+  orderNumber: number;
+  customerName: string;
+  phone: string;
+  email: string;
+  comment: string;
+  managerComment: string;
+  deliveryMethod: string;
+  paymentMethod: string;
+  region: string;
+  city: string;
+  novaPoshtaType: string;
+  novaPoshtaBranch: string;
+  courierAddress: string;
+  status: string;
+  items: Array<{
+    productId: string;
+    name: string;
+    price: number;
+    quantity: number;
+  }>;
+};
+
 type FieldErrors = {
   phone?: string;
   email?: string;
@@ -24,6 +49,19 @@ type FieldErrors = {
 };
 
 const DELIVERY_METHODS = ["Новая почта", "Міст Експрес", "Укрпошта", "Курьер", "Самовывоз"];
+
+async function readJsonSafely(response: Response) {
+  const text = await response.text();
+  if (!text.trim()) {
+    return null;
+  }
+
+  try {
+    return JSON.parse(text) as Record<string, unknown>;
+  } catch {
+    return null;
+  }
+}
 
 function formatUkrainianPhone(value: string) {
   const digits = value.replace(/\D/g, "");
@@ -67,23 +105,48 @@ function findExactProduct(products: ProductOption[], query: string) {
   );
 }
 
-export function AdminOrderCreate({ products }: { products: ProductOption[] }) {
+function buildInitialLines(initialOrder: EditableOrder | null, products: ProductOption[]) {
+  if (!initialOrder || initialOrder.items.length === 0) {
+    return [{ productId: "", quantity: 1, search: "" }];
+  }
+
+  return initialOrder.items.map((item) => {
+    const product = products.find((candidate) => candidate.id === item.productId);
+    return {
+      productId: item.productId,
+      quantity: item.quantity,
+      search: product ? `${product.sku} ${product.name}` : item.name
+    };
+  });
+}
+
+export function AdminOrderCreate({
+  products,
+  initialOrder = null
+}: {
+  products: ProductOption[];
+  initialOrder?: EditableOrder | null;
+}) {
   const router = useRouter();
-  const [customerName, setCustomerName] = useState("");
-  const [phone, setPhone] = useState("");
-  const [email, setEmail] = useState("");
-  const [comment, setComment] = useState("");
-  const [deliveryMethod, setDeliveryMethod] = useState("Новая почта");
-  const [paymentMethod, setPaymentMethod] = useState("Наложенный платеж");
-  const [region, setRegion] = useState("");
-  const [city, setCity] = useState("");
-  const [novaPoshtaType, setNovaPoshtaType] = useState("Отделение");
-  const [novaPoshtaBranch, setNovaPoshtaBranch] = useState("");
-  const [courierAddress, setCourierAddress] = useState("");
-  const [lines, setLines] = useState<OrderLine[]>([{ productId: "", quantity: 1, search: "" }]);
+  const isEditing = Boolean(initialOrder);
+  const [customerName, setCustomerName] = useState(initialOrder?.customerName ?? "");
+  const [phone, setPhone] = useState(initialOrder?.phone ?? "");
+  const [email, setEmail] = useState(initialOrder?.email ?? "");
+  const [comment, setComment] = useState(initialOrder?.comment ?? "");
+  const [managerComment, setManagerComment] = useState(initialOrder?.managerComment ?? "");
+  const [deliveryMethod, setDeliveryMethod] = useState(initialOrder?.deliveryMethod ?? "Новая почта");
+  const [paymentMethod, setPaymentMethod] = useState(initialOrder?.paymentMethod ?? "Наложенный платеж");
+  const [region, setRegion] = useState(initialOrder?.region ?? "");
+  const [city, setCity] = useState(initialOrder?.city ?? "");
+  const [novaPoshtaType, setNovaPoshtaType] = useState(initialOrder?.novaPoshtaType ?? "Отделение");
+  const [novaPoshtaBranch, setNovaPoshtaBranch] = useState(initialOrder?.novaPoshtaBranch ?? "");
+  const [courierAddress, setCourierAddress] = useState(initialOrder?.courierAddress ?? "");
+  const [status, setStatus] = useState(initialOrder?.status ?? "Новый");
+  const [lines, setLines] = useState<OrderLine[]>(() => buildInitialLines(initialOrder, products));
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
+  const [message, setMessage] = useState("");
 
   const productMap = useMemo(() => new Map(products.map((product) => [product.id, product])), [products]);
 
@@ -132,6 +195,7 @@ export function AdminOrderCreate({ products }: { products: ProductOption[] }) {
     event.preventDefault();
     setLoading(true);
     setError("");
+    setMessage("");
 
     const nextErrors: FieldErrors = {};
     if (!validatePhone(phone)) nextErrors.phone = "Введите украинский номер в формате +380 XX XXX XX XX.";
@@ -146,34 +210,51 @@ export function AdminOrderCreate({ products }: { products: ProductOption[] }) {
 
     setFieldErrors({});
 
-    const response = await fetch("/api/orders", {
-      method: "POST",
+    const payload = {
+      customerName,
+      phone,
+      email,
+      comment,
+      managerComment,
+      deliveryMethod,
+      paymentMethod,
+      region,
+      city,
+      novaPoshtaType: ["Новая почта", "Укрпошта", "Міст Експрес"].includes(deliveryMethod) ? novaPoshtaType : "",
+      novaPoshtaBranch: ["Новая почта", "Укрпошта", "Міст Експрес"].includes(deliveryMethod) ? novaPoshtaBranch : "",
+      courierAddress: deliveryMethod === "Курьер" ? courierAddress : "",
+      items: preparedItems,
+      ...(isEditing ? { status } : {})
+    };
+
+    const response = await fetch(isEditing ? `/api/orders/${initialOrder?.id}` : "/api/orders", {
+      method: isEditing ? "PATCH" : "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        customerName,
-        phone,
-        email,
-        comment,
-        deliveryMethod,
-        paymentMethod,
-        region,
-        city,
-        novaPoshtaType: ["Новая почта", "Укрпошта", "Міст Експрес"].includes(deliveryMethod) ? novaPoshtaType : "",
-        novaPoshtaBranch: ["Новая почта", "Укрпошта", "Міст Експрес"].includes(deliveryMethod) ? novaPoshtaBranch : "",
-        courierAddress: deliveryMethod === "Курьер" ? courierAddress : "",
-        items: preparedItems
-      })
+      body: JSON.stringify(payload)
     });
 
-    const data = await response.json();
+    const data = await readJsonSafely(response);
     if (!response.ok) {
-      setError(data.error ?? "Не удалось создать заказ.");
+      setError(
+        (typeof data?.error === "string" ? data.error : null) ??
+          (isEditing ? "Не удалось обновить заказ." : "Не удалось создать заказ.")
+      );
       setLoading(false);
       return;
     }
 
-    router.push(`/admin/orders/${data.id}`);
-    router.refresh();
+    if (isEditing) {
+      setMessage("Заказ обновлён.");
+      router.refresh();
+    } else {
+      const nextId = typeof data?.id === "string" ? data.id : null;
+      if (nextId) {
+        router.push(`/admin/orders/${nextId}`);
+      }
+      router.refresh();
+    }
+
+    setLoading(false);
   }
 
   return (
@@ -181,7 +262,7 @@ export function AdminOrderCreate({ products }: { products: ProductOption[] }) {
       <div className="adminHeader">
         <div>
           <span className="eyebrow">Заказ</span>
-          <h1>Создать заказ вручную</h1>
+          <h1>{isEditing ? `Редактирование заказа #${initialOrder?.orderNumber}` : "Создать заказ вручную"}</h1>
         </div>
         <LogoutButton />
       </div>
@@ -224,6 +305,11 @@ export function AdminOrderCreate({ products }: { products: ProductOption[] }) {
             <option value="Оплата картой">Оплата картой</option>
             <option value="Безналичный расчет">Безналичный расчет</option>
           </select>
+          {isEditing ? (
+            <select value={status} onChange={(event) => setStatus(event.target.value)}>
+              {ORDER_STATUSES.map((orderStatus) => <option key={orderStatus} value={orderStatus}>{orderStatus}</option>)}
+            </select>
+          ) : null}
           <input value={region} onChange={(event) => setRegion(event.target.value)} placeholder="Область" />
           <input value={city} onChange={(event) => setCity(event.target.value)} placeholder="Город" />
           {["Новая почта", "Укрпошта", "Міст Експрес"].includes(deliveryMethod) ? (
@@ -236,11 +322,12 @@ export function AdminOrderCreate({ products }: { products: ProductOption[] }) {
             </>
           ) : null}
           {deliveryMethod === "Курьер" ? <input value={courierAddress} onChange={(event) => setCourierAddress(event.target.value)} placeholder="Адрес курьерской доставки" /> : null}
-          <textarea value={comment} onChange={(event) => setComment(event.target.value)} rows={5} placeholder="Комментарий" />
+          <textarea value={comment} onChange={(event) => setComment(event.target.value)} rows={4} placeholder="Комментарий клиента" />
+          <textarea value={managerComment} onChange={(event) => setManagerComment(event.target.value)} rows={4} placeholder="Комментарий менеджера" />
         </section>
 
         <section className="panel formGrid">
-          <h2>Товары</h2>
+          <h2>Товары в заказе</h2>
           {lines.map((line, index) => {
             const query = line.search.trim().toLowerCase();
             const selectedProduct = line.productId ? productMap.get(line.productId) : null;
@@ -260,7 +347,7 @@ export function AdminOrderCreate({ products }: { products: ProductOption[] }) {
                   <div className="panel formGrid">
                     {suggestions.map((product) => (
                       <button key={product.id} type="button" className="button secondary" onClick={() => selectProduct(index, product)}>
-                        {product.sku} · {product.name} · {product.price} грн
+                        {product.sku} · {product.name} · {product.price.toFixed(2)} грн
                       </button>
                     ))}
                   </div>
@@ -285,9 +372,10 @@ export function AdminOrderCreate({ products }: { products: ProductOption[] }) {
           </div>
           <div className="actions">
             <button type="button" className="button secondary" onClick={addLine}>Добавить товар</button>
-            <button type="submit" className="button primary" disabled={loading}>{loading ? "Сохраняем..." : "Создать заказ"}</button>
+            <button type="submit" className="button primary" disabled={loading}>{loading ? "Сохраняем..." : isEditing ? "Сохранить заказ" : "Создать заказ"}</button>
           </div>
           {error ? <p className="errorText">{error}</p> : null}
+          {message ? <p className="successText">{message}</p> : null}
         </section>
       </form>
     </section>

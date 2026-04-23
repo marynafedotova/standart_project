@@ -11,6 +11,10 @@ import { slugify } from "@/lib/slug";
 
 type ProductPayload = {
   name: string;
+  nameI18n: {
+    ru: string;
+    en: string;
+  };
   slug: string;
   status: string;
   category: string[];
@@ -27,6 +31,10 @@ type ProductPayload = {
   colors: string;
   badge: string | null;
   description: string;
+  descriptionI18n: {
+    ru: string;
+    en: string;
+  };
   image: string;
   images: string[];
   features: string;
@@ -36,6 +44,10 @@ type SubmitMode = "save" | "continue";
 
 const EMPTY_PRODUCT_FORM: ProductPayload = {
   name: "",
+  nameI18n: {
+    ru: "",
+    en: ""
+  },
   slug: "",
   status: "Активен",
   category: [],
@@ -52,6 +64,10 @@ const EMPTY_PRODUCT_FORM: ProductPayload = {
   colors: "",
   badge: "",
   description: "",
+  descriptionI18n: {
+    ru: "",
+    en: ""
+  },
   image: DEFAULT_PRODUCT_IMAGE,
   images: [],
   features: ""
@@ -167,6 +183,10 @@ export function AdminProductFormV5({
   const [isSlugManual, setIsSlugManual] = useState(Boolean(product?.slug && product.slug !== initialGeneratedSlug));
   const [form, setForm] = useState<ProductPayload>({
     name: product?.name ?? "",
+    nameI18n: {
+      ru: product?.nameI18n?.ru ?? "",
+      en: product?.nameI18n?.en ?? ""
+    },
     slug: product?.slug ?? "",
     status: product?.status ?? "Активен",
     category: parseMultiValue(product?.category),
@@ -183,6 +203,10 @@ export function AdminProductFormV5({
     colors: product?.colors.join("\n") ?? "",
     badge: product?.badge ?? "",
     description: product?.description ?? "",
+    descriptionI18n: {
+      ru: product?.descriptionI18n?.ru ?? "",
+      en: product?.descriptionI18n?.en ?? ""
+    },
     image: product?.image ?? DEFAULT_PRODUCT_IMAGE,
     images: uniqueImages(product?.images ?? (product?.image ? [product.image] : [])),
     features: product?.features.join("\n") ?? ""
@@ -296,8 +320,16 @@ export function AdminProductFormV5({
       category: resolvedCategories,
       brand: resolvedBrand,
       season: resolvedSeasons,
+      nameI18n: {
+        ru: form.nameI18n.ru.trim(),
+        en: form.nameI18n.en.trim()
+      },
       oldPrice: form.oldPrice || null,
       badge: form.badge || null,
+      descriptionI18n: {
+        ru: form.descriptionI18n.ru.trim(),
+        en: form.descriptionI18n.en.trim()
+      },
       features: form.features
     };
 
@@ -346,6 +378,36 @@ export function AdminProductFormV5({
             <input value={form.name} onChange={(event) => handleNameChange(event.target.value)} type="text" placeholder="Например: Кроссовки Run Air" required />
           </Field>
 
+          <div className="splitGrid">
+            <Field label="Название RU" hint="Русская версия названия для мультиязычности.">
+              <input
+                value={form.nameI18n.ru}
+                onChange={(event) =>
+                  setForm((current) => ({
+                    ...current,
+                    nameI18n: { ...current.nameI18n, ru: event.target.value }
+                  }))
+                }
+                type="text"
+                placeholder="Название на русском"
+              />
+            </Field>
+
+            <Field label="Название EN" hint="Английская версия названия для мультиязычности.">
+              <input
+                value={form.nameI18n.en}
+                onChange={(event) =>
+                  setForm((current) => ({
+                    ...current,
+                    nameI18n: { ...current.nameI18n, en: event.target.value }
+                  }))
+                }
+                type="text"
+                placeholder="Product title in English"
+              />
+            </Field>
+          </div>
+
           <Field label="URL товара" hint="Генерируется автоматически, но можно изменить вручную.">
             <input value={form.slug} onChange={(event) => handleSlugChange(event.target.value)} type="text" placeholder="krossovki-run-air" />
           </Field>
@@ -353,6 +415,36 @@ export function AdminProductFormV5({
           <Field label="Описание" hint="Короткое понятное описание товара.">
             <textarea value={form.description} onChange={(event) => setForm({ ...form, description: event.target.value })} rows={6} placeholder="Опишите товар простыми словами" />
           </Field>
+
+          <div className="splitGrid">
+            <Field label="Описание RU" hint="Русская версия описания.">
+              <textarea
+                value={form.descriptionI18n.ru}
+                onChange={(event) =>
+                  setForm((current) => ({
+                    ...current,
+                    descriptionI18n: { ...current.descriptionI18n, ru: event.target.value }
+                  }))
+                }
+                rows={5}
+                placeholder="Описание на русском"
+              />
+            </Field>
+
+            <Field label="Описание EN" hint="Английская версия описания.">
+              <textarea
+                value={form.descriptionI18n.en}
+                onChange={(event) =>
+                  setForm((current) => ({
+                    ...current,
+                    descriptionI18n: { ...current.descriptionI18n, en: event.target.value }
+                  }))
+                }
+                rows={5}
+                placeholder="Product description in English"
+              />
+            </Field>
+          </div>
 
           <div className="splitGrid">
             <Field label="Цена" hint="Текущая цена продажи. Можно вводить копейки через точку или запятую.">
@@ -370,6 +462,7 @@ export function AdminProductFormV5({
                 <option value="Активен">Активен</option>
                 <option value="Черновик">Черновик</option>
                 <option value="Нет в наличии">Нет в наличии</option>
+                <option value="Брак">Брак</option>
               </select>
             </Field>
 
@@ -470,3 +563,4 @@ export function AdminProductFormV5({
     </section>
   );
 }
+

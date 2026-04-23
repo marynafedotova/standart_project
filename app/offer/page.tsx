@@ -3,7 +3,8 @@
 export default function OfferPage() {
   return (
     <StoreShell>
-      <LegalSections title="Договор публичной оферты" />
+      <LegalSections titleKey="Shell.offer" />
     </StoreShell>
   );
 }
+

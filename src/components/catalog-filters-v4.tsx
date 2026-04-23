@@ -1,5 +1,6 @@
 ﻿"use client";
 
+import { useTranslations } from "next-intl";
 import { useMemo, useState } from "react";
 import { CatalogView, type StoreProduct } from "@/components/storefront-db-v2";
 import { parseMultiValue } from "@/lib/multi-value";
@@ -51,6 +52,7 @@ export function CatalogFiltersV4({
   products: StoreProduct[];
   initialSeason?: string;
 }) {
+  const t = useTranslations("Catalog");
   const [search, setSearch] = useState("");
   const [maxPrice, setMaxPrice] = useState(8000);
   const [inStockOnly, setInStockOnly] = useState(false);
@@ -150,77 +152,32 @@ export function CatalogFiltersV4({
   ]);
 
   return (
-    <main className="page section container twoColumn">
+    <main className="page section twoColumn">
       <aside className="panel stickySide">
-        <h2>Фильтры</h2>
+        <h2>{t("filters")}</h2>
         <div className="filterBlock">
-          <label htmlFor="catalogSearch">Поиск</label>
+          <label htmlFor="catalogSearch">{t("search")}</label>
           <input
             id="catalogSearch"
             type="search"
             value={search}
             onChange={(event) => setSearch(event.target.value)}
-            placeholder="Название, бренд, сезон, цвет..."
+            placeholder={t("searchPlaceholder")}
           />
         </div>
 
-        <FilterGroup
-          title="Категория"
-          values={categories}
-          selected={selectedCategories}
-          onToggle={(value) => toggleValue(value, selectedCategories, setSelectedCategories)}
-        />
-        <FilterGroup
-          title="Бренд"
-          values={brands}
-          selected={selectedBrands}
-          onToggle={(value) => toggleValue(value, selectedBrands, setSelectedBrands)}
-        />
-        <FilterGroup
-          title="Размер"
-          values={sizes}
-          selected={selectedSizes}
-          onToggle={(value) => toggleValue(value, selectedSizes, setSelectedSizes)}
-        />
-        <FilterGroup
-          title="Сантиметры"
-          values={centimeters}
-          selected={selectedCentimeters}
-          onToggle={(value) => toggleValue(value, selectedCentimeters, setSelectedCentimeters)}
-        />
-        <FilterGroup
-          title="Возраст"
-          values={ageGroups}
-          selected={selectedAgeGroups}
-          onToggle={(value) => toggleValue(value, selectedAgeGroups, setSelectedAgeGroups)}
-        />
-        <FilterGroup
-          title="Для кого подходит"
-          values={audiences}
-          selected={selectedAudiences}
-          onToggle={(value) => toggleValue(value, selectedAudiences, setSelectedAudiences)}
-        />
-        <FilterGroup
-          title="Сезон"
-          values={seasons}
-          selected={selectedSeasons}
-          onToggle={(value) => toggleValue(value, selectedSeasons, setSelectedSeasons)}
-        />
-        <FilterGroup
-          title="Материал"
-          values={materials}
-          selected={selectedMaterials}
-          onToggle={(value) => toggleValue(value, selectedMaterials, setSelectedMaterials)}
-        />
-        <FilterGroup
-          title="Цвет"
-          values={colors}
-          selected={selectedColors}
-          onToggle={(value) => toggleValue(value, selectedColors, setSelectedColors)}
-        />
+        <FilterGroup title={t("category")} values={categories} selected={selectedCategories} onToggle={(value) => toggleValue(value, selectedCategories, setSelectedCategories)} />
+        <FilterGroup title={t("brand")} values={brands} selected={selectedBrands} onToggle={(value) => toggleValue(value, selectedBrands, setSelectedBrands)} />
+        <FilterGroup title={t("size")} values={sizes} selected={selectedSizes} onToggle={(value) => toggleValue(value, selectedSizes, setSelectedSizes)} />
+        <FilterGroup title={t("centimeters")} values={centimeters} selected={selectedCentimeters} onToggle={(value) => toggleValue(value, selectedCentimeters, setSelectedCentimeters)} />
+        <FilterGroup title={t("age")} values={ageGroups} selected={selectedAgeGroups} onToggle={(value) => toggleValue(value, selectedAgeGroups, setSelectedAgeGroups)} />
+        <FilterGroup title={t("audience")} values={audiences} selected={selectedAudiences} onToggle={(value) => toggleValue(value, selectedAudiences, setSelectedAudiences)} />
+        <FilterGroup title={t("season")} values={seasons} selected={selectedSeasons} onToggle={(value) => toggleValue(value, selectedSeasons, setSelectedSeasons)} />
+        <FilterGroup title={t("material")} values={materials} selected={selectedMaterials} onToggle={(value) => toggleValue(value, selectedMaterials, setSelectedMaterials)} />
+        <FilterGroup title={t("color")} values={colors} selected={selectedColors} onToggle={(value) => toggleValue(value, selectedColors, setSelectedColors)} />
 
         <div className="filterBlock">
-          <label htmlFor="price">Максимальная цена: {maxPrice} грн</label>
+          <label htmlFor="price">{t("maxPrice")}: {maxPrice} грн</label>
           <input
             id="price"
             type="range"
@@ -238,15 +195,15 @@ export function CatalogFiltersV4({
             checked={inStockOnly}
             onChange={(event) => setInStockOnly(event.target.checked)}
           />
-          Только в наличии
+          {t("inStock")}
         </label>
       </aside>
 
       <section>
         <div className="sectionHeading compact">
-          <span className="eyebrow">Каталог</span>
-          <h1>Товары с расширенными фильтрами</h1>
-          <p>Клиент может искать и отбирать товары по всем основным характеристикам карточки товара.</p>
+          <span className="eyebrow">{t("eyebrow")}</span>
+          <h1>{t("title")}</h1>
+          <p>{t("description")}</p>
         </div>
         <CatalogView products={filtered} />
       </section>

@@ -1,7 +1,7 @@
-import { NextResponse } from "next/server";
+﻿import { NextResponse } from "next/server";
 import { requireAdminApi } from "@/lib/auth";
-import { updateOrderStatus } from "@/lib/orders-v2";
-import { orderStatusSchema } from "@/lib/order-validator";
+import { updateOrder, updateOrderStatus } from "@/lib/orders-v3";
+import { orderEditSchema, orderStatusSchema } from "@/lib/order-validator";
 
 export async function PATCH(
   request: Request,
@@ -13,14 +13,25 @@ export async function PATCH(
   }
 
   const body = await request.json();
-  const parsed = orderStatusSchema.safeParse(body);
+  const { id } = await params;
+  const statusOnly = orderStatusSchema.safeParse(body);
 
-  if (!parsed.success) {
-    return NextResponse.json({ error: "Некорректный статус заказа." }, { status: 400 });
+  if (statusOnly.success && Object.keys(body).length === 1) {
+    const order = await updateOrderStatus(id, statusOnly.data.status);
+
+    if (!order) {
+      return NextResponse.json({ error: "Заказ не найден." }, { status: 404 });
+    }
+
+    return NextResponse.json(order);
   }
 
-  const { id } = await params;
-  const order = await updateOrderStatus(id, parsed.data.status);
+  const parsed = orderEditSchema.safeParse(body);
+  if (!parsed.success) {
+    return NextResponse.json({ error: "Некорректные данные заказа." }, { status: 400 });
+  }
+
+  const order = await updateOrder(id, parsed.data);
 
   if (!order) {
     return NextResponse.json({ error: "Заказ не найден." }, { status: 404 });
