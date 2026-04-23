@@ -2,6 +2,8 @@
 import { defaultLocale, locales } from "@/i18n/routing";
 import { getPosts, getProducts } from "@/lib/store";
 
+export const dynamic = "force-dynamic";
+
 function getBaseUrl() {
   return process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") || "http://localhost:3000";
 }
