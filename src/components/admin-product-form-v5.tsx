@@ -686,7 +686,7 @@ export function AdminProductFormV5({
             </Field>
 
             <Field label="Общий остаток" hint="Считается автоматически как сумма по всем складам.">
-              <input value={String(form.stock)} type="text" inputMode="numeric" readOnly />
+              <input value={String(form.stock)} type="text" inputMode="numeric" />
             </Field>
           </div>
 
