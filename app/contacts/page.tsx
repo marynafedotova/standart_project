@@ -1,4 +1,4 @@
-import { ContactsSections, StoreShell } from "@/components/storefront-db-v2";
+import { ContactsSections, StoreShell } from "@/components/storefront-db";
 
 export default function ContactsPage() {
   return (

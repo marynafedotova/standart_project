@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { ProductDetails, StoreShell } from "@/components/storefront-db-v2";
+import { ProductDetails, StoreShell } from "@/components/storefront-db";
 import { getProductBySlug, getProductVariants } from "@/lib/store";
 
 export default async function LocalizedProductPage({

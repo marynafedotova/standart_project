@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { BlogPostDetails, StoreShell } from "@/components/storefront-db-v2";
+import { BlogPostDetails, StoreShell } from "@/components/storefront-db";
 import { getPostBySlug } from "@/lib/store";
 
 export default async function LocalizedBlogPostPage({

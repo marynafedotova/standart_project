@@ -5,7 +5,7 @@ import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { useShopState } from "@/components/shop-state";
-import type { StoreProduct } from "@/components/storefront-db-v2";
+import type { StoreProduct } from "@/components/storefront-db";
 
 type CheckoutFieldErrors = {
   customerName?: string;

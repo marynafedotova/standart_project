@@ -1,7 +1,7 @@
 ﻿import { getTranslations } from "next-intl/server";
 import { Hero } from "@/components/hero";
-import type { StoreProduct } from "@/components/storefront-db-v2";
-import { CatalogView } from "@/components/storefront-db-v2";
+import type { StoreProduct } from "@/components/storefront-db";
+import { CatalogView } from "@/components/storefront-db";
 import { Link } from "@/i18n/navigation";
 
 export async function HomeSectionsV2({

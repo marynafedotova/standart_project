@@ -1,4 +1,4 @@
-import { BlogSections, StoreShell } from "@/components/storefront-db-v2";
+import { BlogSections, StoreShell } from "@/components/storefront-db";
 import { getPosts } from "@/lib/store";
 
 export default async function BlogPage() {

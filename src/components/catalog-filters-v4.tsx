@@ -2,7 +2,7 @@
 
 import { useTranslations } from "next-intl";
 import { useMemo, useState } from "react";
-import { CatalogView, type StoreProduct } from "@/components/storefront-db-v2";
+import { CatalogView, type StoreProduct } from "@/components/storefront-db";
 import { parseMultiValue } from "@/lib/multi-value";
 
 type FilterGroupProps = {

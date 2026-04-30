@@ -1,4 +1,4 @@
-﻿import { LegalSections, StoreShell } from "@/components/storefront-db-v2";
+﻿import { LegalSections, StoreShell } from "@/components/storefront-db";
 
 export default function OfferPage() {
   return (
