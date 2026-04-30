@@ -1,10 +1,12 @@
-﻿import { randomUUID } from "node:crypto";
-import { mkdir, writeFile } from "node:fs/promises";
-import path from "node:path";
+﻿import { v2 as cloudinary } from "cloudinary";
 import { NextResponse } from "next/server";
 import { requireAdminApi } from "@/lib/auth";
 
-const ALLOWED_TYPES = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"]);
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME!,
+  api_key: process.env.CLOUDINARY_API_KEY!,
+  api_secret: process.env.CLOUDINARY_API_SECRET!
+});
 
 export async function POST(request: Request) {
   const admin = await requireAdminApi();
@@ -12,40 +14,27 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Требуется авторизация." }, { status: 401 });
   }
 
-  const formData = await request.formData();
-  const file = formData.get("file");
+  try {
+    const formData = await request.formData();
+    const file = formData.get("file") as File;
 
-  if (!(file instanceof File)) {
-    return NextResponse.json({ error: "Файл не найден." }, { status: 400 });
-  }
+    if (!file) {
+      return NextResponse.json({ error: "Файл не найден." }, { status: 400 });
+    }
 
-  if (!ALLOWED_TYPES.has(file.type)) {
-    return NextResponse.json({ error: "Поддерживаются только JPG, PNG, WEBP и GIF." }, { status: 400 });
-  }
+    const bytes = await file.arrayBuffer();
+    const buffer = Buffer.from(bytes);
 
-  const arrayBuffer = await file.arrayBuffer();
-  const buffer = Buffer.from(arrayBuffer);
-  const extension = path.extname(file.name) || mimeToExtension(file.type);
-  const fileName = `${randomUUID()}${extension}`;
-  const uploadDir = path.join(process.cwd(), "public", "uploads");
+    const result = await new Promise<any>((resolve, reject) => {
+      cloudinary.uploader.upload_stream({}, (error, result) => {
+        if (error) reject(error);
+        else resolve(result);
+      }).end(buffer);
+    });
 
-  await mkdir(uploadDir, { recursive: true });
-  await writeFile(path.join(uploadDir, fileName), buffer);
-
-  return NextResponse.json({ url: `/uploads/${fileName}` });
-}
-
-function mimeToExtension(mimeType: string) {
-  switch (mimeType) {
-    case "image/jpeg":
-      return ".jpg";
-    case "image/png":
-      return ".png";
-    case "image/webp":
-      return ".webp";
-    case "image/gif":
-      return ".gif";
-    default:
-      return "";
+    return NextResponse.json({ url: result.secure_url });
+  } catch (error) {
+    console.error("UPLOAD ERROR:", error);
+    return NextResponse.json({ error: "Ошибка загрузки" }, { status: 500 });
   }
 }
