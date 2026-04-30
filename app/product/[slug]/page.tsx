@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { ProductDetails, StoreShell } from "@/components/storefront-db-v2";
-import { getProductBySlug } from "@/lib/store";
+import { getProductBySlug, getProductVariants } from "@/lib/store";
 
 export default async function ProductPage({
   params
@@ -14,9 +14,11 @@ export default async function ProductPage({
     notFound();
   }
 
+  const variants = await getProductVariants(product);
+
   return (
     <StoreShell>
-      <ProductDetails product={product} />
+      <ProductDetails product={product} variants={variants} />
     </StoreShell>
   );
 }

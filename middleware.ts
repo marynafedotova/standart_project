@@ -1,4 +1,4 @@
-﻿import createIntlMiddleware from "next-intl/middleware";
+import createIntlMiddleware from "next-intl/middleware";
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { defaultLocale, locales } from "@/i18n/routing";
@@ -10,8 +10,26 @@ const intlMiddleware = createIntlMiddleware({
   localePrefix: "always"
 });
 
+function stripLocaleFromAdminPath(pathname: string) {
+  for (const locale of locales) {
+    const prefix = `/${locale}/admin`;
+    if (pathname === prefix || pathname.startsWith(`${prefix}/`)) {
+      return pathname.slice(locale.length + 1);
+    }
+  }
+
+  return null;
+}
+
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
+  const adminPathWithoutLocale = stripLocaleFromAdminPath(pathname);
+
+  if (adminPathWithoutLocale) {
+    const redirectUrl = request.nextUrl.clone();
+    redirectUrl.pathname = adminPathWithoutLocale;
+    return NextResponse.redirect(redirectUrl);
+  }
 
   if (pathname.startsWith("/admin")) {
     if (pathname !== "/admin/login") {

@@ -9,6 +9,7 @@ import { ensureUniqueSlug } from "@/lib/slug";
 import { productSchema } from "@/lib/validators";
 
 type ProductImportRow = Record<string, string | number | boolean | null | undefined>;
+const DEFAULT_WAREHOUSE_NAME = "Основной склад";
 
 function parseText(value: unknown) {
   if (value === null || value === undefined) return "";
@@ -55,6 +56,9 @@ function buildTemplateResponse() {
   const rows = [
     {
       name: "Base product title",
+      code: "SKU-001",
+      group: "air-jacket",
+      variantColor: "Черный",
       slug: "bazova-nazva-tovaru",
       status: "Активен",
       category: "Clothes | New arrivals",
@@ -83,6 +87,9 @@ function buildTemplateResponse() {
 
   const helpRows = [
     { field: "name", required: "yes", description: "Base product title" },
+    { field: "code", required: "no", description: "Internal product code for search and identification" },
+    { field: "group", required: "no", description: "Shared group key for the same model in different colors" },
+    { field: "variantColor", required: "no", description: "Display color for this specific variant" },
     { field: "slug", required: "no", description: "Unique URL slug. If it matches existing slug, product will update" },
     { field: "status", required: "no", description: "Активен / Черновик / Нет в наличии / Брак" },
     { field: "category", required: "yes", description: "Multiple values separated by |" },
@@ -173,6 +180,9 @@ export async function POST(request: Request) {
 
     const parsed = productSchema.safeParse({
       name: parseText(row.name),
+      code: parseText(row.code),
+      group: parseText(row.group),
+      variantColor: parseText(row.variantColor),
       slug,
       status: parseText(row.status) || "Активен",
       category: parseText(row.category),
@@ -189,6 +199,10 @@ export async function POST(request: Request) {
       colors: parseLines(row.colors),
       badge: parseText(row.badge) || null,
       description: parseText(row.description),
+      warehouseStock:
+        parseIntValue(row.stock) > 0
+          ? [{ warehouse: DEFAULT_WAREHOUSE_NAME, quantity: parseIntValue(row.stock) }]
+          : [],
       image: parseText(row.image) || DEFAULT_PRODUCT_IMAGE,
       images: parseLines(row.gallery),
       features: parseLines(row.features),
@@ -211,10 +225,14 @@ export async function POST(request: Request) {
       ...(existingProduct ?? {
         id: randomUUID(),
         sku: "",
+        code: "",
+        group: "",
+        variantColor: "",
         createdAt: now
       }),
       ...parsed.data,
       slug,
+      stock: parsed.data.warehouseStock.reduce((sum, item) => sum + item.quantity, 0),
       oldPrice: parsed.data.oldPrice ?? null,
       badge: parsed.data.badge ?? null,
       updatedAt: now
@@ -240,6 +258,11 @@ export async function POST(request: Request) {
     for (const season of parseMultiValue(nextProduct.season)) {
       if (!db.seasons.includes(season)) {
         db.seasons.push(season);
+      }
+    }
+    for (const warehouse of nextProduct.warehouseStock.map((item) => item.warehouse)) {
+      if (warehouse && !db.warehouses.includes(warehouse)) {
+        db.warehouses.push(warehouse);
       }
     }
   }

@@ -5,6 +5,14 @@ import { parseMultiValue } from "@/lib/multi-value";
 import { ensureUniqueSlug } from "@/lib/slug";
 import { productSchema } from "@/lib/validators";
 
+function normalizeWarehouseNames(entries: Array<{ warehouse: string; quantity: number }>) {
+  return Array.from(new Set(entries.map((item) => item.warehouse.trim()).filter(Boolean)));
+}
+
+function calculateWarehouseStock(entries: Array<{ warehouse: string; quantity: number }>) {
+  return entries.reduce((sum, item) => sum + Math.max(0, Math.trunc(item.quantity)), 0);
+}
+
 export async function GET(
   _request: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -55,6 +63,7 @@ export async function PATCH(
     ...parsed.data,
     sku: db.products[index].sku,
     status: parsed.data.status,
+    stock: calculateWarehouseStock(parsed.data.warehouseStock),
     oldPrice: parsed.data.oldPrice ?? null,
     badge: parsed.data.badge ?? null,
     updatedAt: stampNow()
@@ -70,6 +79,11 @@ export async function PATCH(
   for (const season of parseMultiValue(product.season)) {
     if (!db.seasons.includes(season)) {
       db.seasons.push(season);
+    }
+  }
+  for (const warehouse of normalizeWarehouseNames(product.warehouseStock)) {
+    if (!db.warehouses.includes(warehouse)) {
+      db.warehouses.push(warehouse);
     }
   }
   db.products[index] = product;

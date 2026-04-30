@@ -19,7 +19,7 @@ function formatMoney(value: number) {
 
 export function AdminProductsClient({ products }: { products: AdminProduct[] }) {
   const router = useRouter();
-  const [skuQuery, setSkuQuery] = useState("");
+  const [codeQuery, setCodeQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [selectedBrand, setSelectedBrand] = useState("all");
   const [selectedStatus, setSelectedStatus] = useState("all");
@@ -59,16 +59,17 @@ export function AdminProductsClient({ products }: { products: AdminProduct[] }) 
   );
 
   const filteredProducts = useMemo(() => {
-    const normalizedSku = skuQuery.trim().toLowerCase();
+    const normalizedCode = codeQuery.trim().toLowerCase();
     const parsedMinPrice = minPrice.trim() ? Number(minPrice.replace(",", ".")) : null;
     const parsedMaxPrice = maxPrice.trim() ? Number(maxPrice.replace(",", ".")) : null;
 
     return products.filter((product) => {
       const status = rows[product.id] ?? ((product.status as ProductStatus) || (product.stock > 0 ? "Активен" : "Нет в наличии"));
-      const matchesSku =
-        !normalizedSku ||
-        product.sku.toLowerCase().includes(normalizedSku) ||
-        product.name.toLowerCase().includes(normalizedSku);
+      const matchesCode =
+        !normalizedCode ||
+        product.code.toLowerCase().includes(normalizedCode) ||
+        product.sku.toLowerCase().includes(normalizedCode) ||
+        product.name.toLowerCase().includes(normalizedCode);
       const matchesCategory = selectedCategory === "all" || product.category === selectedCategory;
       const matchesBrand = selectedBrand === "all" || product.brand === selectedBrand;
       const matchesStatus = selectedStatus === "all" || status === selectedStatus;
@@ -77,7 +78,7 @@ export function AdminProductsClient({ products }: { products: AdminProduct[] }) 
       const matchesMaxPrice = parsedMaxPrice === null || Number.isNaN(parsedMaxPrice) || product.price <= parsedMaxPrice;
 
       return (
-        matchesSku &&
+        matchesCode &&
         matchesCategory &&
         matchesBrand &&
         matchesStatus &&
@@ -86,7 +87,7 @@ export function AdminProductsClient({ products }: { products: AdminProduct[] }) 
         matchesMaxPrice
       );
     });
-  }, [maxPrice, minPrice, products, rows, selectedBrand, selectedCategory, selectedSize, selectedStatus, skuQuery]);
+  }, [codeQuery, maxPrice, minPrice, products, rows, selectedBrand, selectedCategory, selectedSize, selectedStatus]);
 
   async function saveProduct(product: AdminProduct) {
     const status = rows[product.id];
@@ -188,9 +189,9 @@ export function AdminProductsClient({ products }: { products: AdminProduct[] }) 
       <div className="panel toolbar">
         <input
           type="search"
-          value={skuQuery}
-          onChange={(event) => setSkuQuery(event.target.value)}
-          placeholder="Поиск по артикулу или названию"
+          value={codeQuery}
+          onChange={(event) => setCodeQuery(event.target.value)}
+          placeholder="Поиск по коду товара, артикулу или названию"
         />
         <select value={selectedCategory} onChange={(event) => setSelectedCategory(event.target.value)}>
           <option value="all">Все категории</option>
@@ -245,11 +246,13 @@ export function AdminProductsClient({ products }: { products: AdminProduct[] }) 
             <tr>
               <th />
               <th>Артикул</th>
+              <th>Код</th>
               <th>Название</th>
               <th>Категория</th>
               <th>Размер</th>
               <th>Цена</th>
               <th>Остаток</th>
+              <th>Склады</th>
               <th>Статус</th>
               <th />
             </tr>
@@ -269,11 +272,17 @@ export function AdminProductsClient({ products }: { products: AdminProduct[] }) 
                     />
                   </td>
                   <td>{product.sku}</td>
+                  <td>{product.code || "—"}</td>
                   <td><Link href={`/admin/product/${product.id}`}>{product.name}</Link></td>
                   <td>{product.category}</td>
                   <td>{product.size || "—"}</td>
                   <td>{formatMoney(product.price)}</td>
                   <td>{product.stock}</td>
+                  <td>
+                    {product.warehouseStock.length > 0
+                      ? product.warehouseStock.map((entry) => `${entry.warehouse}: ${entry.quantity}`).join(", ")
+                      : "—"}
+                  </td>
                   <td>
                     <select
                       value={status}

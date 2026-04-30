@@ -25,6 +25,24 @@ export async function getProductById(id: string) {
   return products.find((item) => item.id === id) ?? null;
 }
 
+export async function getProductGroups() {
+  noStore();
+  const products = await getProducts();
+  return [...new Set(products.map((product) => product.group.trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b));
+}
+
+export async function getProductVariants(product: { id: string; group?: string }) {
+  noStore();
+  const products = await getProducts();
+  const group = product.group?.trim();
+
+  if (!group) {
+    return products.filter((item) => item.id === product.id);
+  }
+
+  return products.filter((item) => item.group.trim() === group);
+}
+
 export async function getCategories() {
   noStore();
   const { readDb } = await import("@/lib/json-db");
@@ -44,6 +62,13 @@ export async function getSeasons() {
   const { readDb } = await import("@/lib/json-db");
   const db = await readDb();
   return db.seasons;
+}
+
+export async function getWarehouses() {
+  noStore();
+  const { readDb } = await import("@/lib/json-db");
+  const db = await readDb();
+  return db.warehouses;
 }
 
 export async function getOrdersForAdmin() {

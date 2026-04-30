@@ -14,6 +14,9 @@ import {
 
 export type StoreProduct = {
   id: string;
+  code: string;
+  group: string;
+  variantColor: string;
   slug: string;
   name: string;
   nameI18n?: Record<string, string>;
@@ -135,7 +138,13 @@ export function CatalogView({ products }: { products: StoreProduct[] }) {
   );
 }
 
-export async function ProductDetails({ product }: { product: StoreProduct }) {
+export async function ProductDetails({
+  product,
+  variants
+}: {
+  product: StoreProduct;
+  variants: StoreProduct[];
+}) {
   const t = await getTranslations("Product");
   const locale = await getLocale();
   const galleryImages = product.images.length > 0 ? product.images : [product.image];
@@ -157,6 +166,26 @@ export async function ProductDetails({ product }: { product: StoreProduct }) {
 
         <p>{productDescription}</p>
 
+        {variants.length > 1 ? (
+          <div className="filterBlock">
+            <span>{t("color")}</span>
+            <div className="chips">
+              {variants.map((variant) => {
+                const variantLabel = variant.variantColor || variant.colors[0] || variant.name;
+                return (
+                  <Link
+                    key={variant.id}
+                    href={`/product/${variant.slug}`}
+                    className={`chip ${variant.id === product.id ? "active" : ""}`}
+                  >
+                    {variantLabel}
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        ) : null}
+
         <div className="specGrid">
           <div>
             <span>{t("brand")}</span>
@@ -168,7 +197,7 @@ export async function ProductDetails({ product }: { product: StoreProduct }) {
           </div>
           <div>
             <span>{t("color")}</span>
-            <strong>{product.colors.join(", ") || t("empty")}</strong>
+            <strong>{product.variantColor || product.colors.join(", ") || t("empty")}</strong>
           </div>
           <div>
             <span>{t("size")}</span>
@@ -340,6 +369,7 @@ export function FavoritesSections({ products }: { products: StoreProduct[] }) {
 
 function ProductCard({ product }: { product: StoreProduct }) {
   const primaryImage = product.images[0] || product.image;
+  const variantLabel = product.variantColor || product.colors[0] || "";
 
   return (
     <article className="productCard">
@@ -351,6 +381,7 @@ function ProductCard({ product }: { product: StoreProduct }) {
         </div>
         <h3>{product.name}</h3>
         <p>{product.description}</p>
+        {variantLabel ? <p className="helperText">Цвет: {variantLabel}</p> : null}
         <div className="metaLine">
           <strong>{formatMoney(product.price)}</strong>
           <Link href={`/product/${product.slug}`}>Подробнее</Link>

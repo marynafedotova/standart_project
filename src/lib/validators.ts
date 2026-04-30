@@ -34,6 +34,23 @@ const imageValueSchema = z
     "Image must be a root-relative path or absolute URL"
   )
   .transform((value) => value || DEFAULT_PRODUCT_IMAGE);
+const warehouseStockSchema = z
+  .array(
+    z.object({
+      warehouse: z.string().trim().min(1),
+      quantity: z.coerce.number().int().nonnegative()
+    })
+  )
+  .optional()
+  .default([])
+  .transform((value) =>
+    value
+      .map((item) => ({
+        warehouse: item.warehouse.trim(),
+        quantity: Math.max(0, Math.trunc(item.quantity))
+      }))
+      .filter((item) => item.warehouse.length > 0)
+  );
 
 export const loginSchema = z.object({
   email: z.string().email(),
@@ -42,6 +59,9 @@ export const loginSchema = z.object({
 
 export const productSchema = z.object({
   name: z.string().min(2),
+  code: optionalText,
+  group: optionalText,
+  variantColor: optionalText,
   slug: z.string().min(2).default("product"),
   status: z.enum(["Активен", "Черновик", "Нет в наличии", "Брак"]).default("Активен"),
   nameI18n: translationMapSchema,
@@ -67,6 +87,7 @@ export const productSchema = z.object({
   badge: z.string().optional().nullable(),
   description: optionalText,
   descriptionI18n: translationMapSchema,
+  warehouseStock: warehouseStockSchema,
   image: imageValueSchema,
   images: z
     .union([stringList, z.string().trim().optional().default("")])

@@ -1,6 +1,6 @@
 import { AdminProductFormV5 } from "@/components/admin-product-form-v5";
 import { requireAdmin } from "@/lib/auth";
-import { getBrands, getCategories, getProductById, getSeasons } from "@/lib/store";
+import { getBrands, getCategories, getProductById, getProductGroups, getSeasons, getWarehouses } from "@/lib/store";
 
 export default async function AdminProductPage({
   params
@@ -13,6 +13,8 @@ export default async function AdminProductPage({
   const categories = await getCategories();
   const brands = await getBrands();
   const seasons = await getSeasons();
+  const warehouses = await getWarehouses();
+  const groups = await getProductGroups();
 
-  return <AdminProductFormV5 product={product} categories={categories} brands={brands} seasons={seasons} />;
+  return <AdminProductFormV5 product={product} categories={categories} brands={brands} seasons={seasons} warehouses={warehouses} groups={groups} />;
 }

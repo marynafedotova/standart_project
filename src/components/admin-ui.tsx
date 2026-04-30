@@ -2,9 +2,17 @@
 import type { DbPostBlock } from "@/lib/json-db";
 import type { ReactNode } from "react";
 
+type WarehouseStockEntry = {
+  warehouse: string;
+  quantity: number;
+};
+
 type AdminProduct = {
   id: string;
   sku: string;
+  code: string;
+  group: string;
+  variantColor: string;
   name: string;
   nameI18n?: Record<string, string>;
   slug: string;
@@ -24,6 +32,7 @@ type AdminProduct = {
   badge: string | null;
   description: string;
   descriptionI18n?: Record<string, string>;
+  warehouseStock: WarehouseStockEntry[];
   image: string;
   images: string[];
   features: string[];
@@ -59,6 +68,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
               <Link href="/admin/categories">Категории</Link>
               <Link href="/admin/brands">Бренды</Link>
               <Link href="/admin/seasons">Сезоны</Link>
+              <Link href="/admin/warehouses">Склады</Link>
             </div>
           </div>
 
