@@ -135,7 +135,11 @@ export function AdminProductsList({ products }: { products: AdminProduct[] }) {
           <tbody>
             {products.map((product) => (
               <tr key={product.id}>
-                <td>{product.sku}</td>
+                <td>
+                    <Link href={`/admin/product/${product.id}`}>
+                      {product.sku}
+                    </Link>
+                  </td>
                 <td><Link href={`/admin/product/${product.id}`}>{product.name}</Link></td>
                 <td>{product.category}</td>
                 <td>{product.price} грн</td>
