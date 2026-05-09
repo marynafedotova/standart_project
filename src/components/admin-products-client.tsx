@@ -6,7 +6,7 @@ import { useMemo, useState } from "react";
 import type { AdminProduct } from "@/components/admin-ui";
 import { useSelectableExport } from "@/components/export-actions";
 
-const PRODUCT_STATUSES = ["Активен", "Черновик", "Нет в наличии", "Брак"] as const;
+const PRODUCT_STATUSES = ["Активний", "Чернетка", "Немає в наявності", "Брак"] as const;
 
 type ProductStatus = (typeof PRODUCT_STATUSES)[number];
 
@@ -33,7 +33,7 @@ export function AdminProductsClient({ products }: { products: AdminProduct[] }) 
     Object.fromEntries(
       products.map((product) => [
         product.id,
-        (product.status as ProductStatus) || (product.stock > 0 ? "Активен" : "Нет в наличии")
+        (product.status as ProductStatus) || (product.stock > 0 ? "Активний" : "Немає в наявності")
       ])
     )
   );
@@ -64,7 +64,7 @@ export function AdminProductsClient({ products }: { products: AdminProduct[] }) 
     const parsedMaxPrice = maxPrice.trim() ? Number(maxPrice.replace(",", ".")) : null;
 
     return products.filter((product) => {
-      const status = rows[product.id] ?? ((product.status as ProductStatus) || (product.stock > 0 ? "Активен" : "Нет в наличии"));
+      const status = rows[product.id] ?? ((product.status as ProductStatus) || (product.stock > 0 ? "Активний" : "Немає в наявності"));
       const matchesCode =
         !normalizedCode ||
         product.code.toLowerCase().includes(normalizedCode) ||
@@ -151,14 +151,14 @@ export function AdminProductsClient({ products }: { products: AdminProduct[] }) 
     <section className="adminPage">
       <div className="adminHeader">
         <div>
-          <span className="eyebrow">Товары</span>
-          <h1>Список товаров</h1>
+          <span className="eyebrow">Товари</span>
+          <h1>Список товарів</h1>
         </div>
         <div className="actions">
-          <Link href="/admin/product/new" className="button primary">Создать товар</Link>
+          <Link href="/admin/product/new" className="button primary">Створити товар</Link>
           <a href="/api/import/products" className="button secondary">Шаблон Excel</a>
           <label className="button secondary">
-            {importing ? "Импорт..." : "Импорт Excel"}
+            {importing ? "Імпорт..." : "Імпорт Excel"}
             <input
               type="file"
               accept=".xlsx,.xls"
@@ -167,22 +167,22 @@ export function AdminProductsClient({ products }: { products: AdminProduct[] }) 
               disabled={importing}
             />
           </label>
-          <a href={exportUi.allHref} className="button secondary">Excel: все</a>
+          <a href={exportUi.allHref} className="button secondary">Excel: усі</a>
           <a
             href={exportUi.hasSelection ? exportUi.selectedHref : undefined}
             className="button secondary"
             aria-disabled={!exportUi.hasSelection}
           >
-            Excel: выбранные
+            Excel: вибрані
           </a>
         </div>
       </div>
       <div className="panel toolbar">
         <label className="checkbox">
           <input type="checkbox" checked={exportUi.allSelected} onChange={() => exportUi.toggleAll()} />
-          <span>Выбрать все</span>
+          <span>Вибрати всі</span>
         </label>
-        {exportUi.hasSelection ? <span>{exportUi.selectedIds.length} выбрано</span> : <span>Можно отметить несколько строк</span>}
+        {exportUi.hasSelection ? <span>{exportUi.selectedIds.length} вибрано</span> : <span>Можна позначити кілька рядків</span>}
         {importMessage ? <span className="successText">{importMessage}</span> : null}
         {importError ? <span className="errorText">{importError}</span> : null}
       </div>
@@ -191,10 +191,10 @@ export function AdminProductsClient({ products }: { products: AdminProduct[] }) 
           type="search"
           value={codeQuery}
           onChange={(event) => setCodeQuery(event.target.value)}
-          placeholder="Поиск по коду товара, артикулу или названию"
+          placeholder="Пошук за кодом товару, артикулом або назвою"
         />
         <select value={selectedCategory} onChange={(event) => setSelectedCategory(event.target.value)}>
-          <option value="all">Все категории</option>
+          <option value="all">Усі категорії</option>
           {categories.map((category) => (
             <option key={category} value={category}>
               {category}
@@ -202,7 +202,7 @@ export function AdminProductsClient({ products }: { products: AdminProduct[] }) 
           ))}
         </select>
         <select value={selectedBrand} onChange={(event) => setSelectedBrand(event.target.value)}>
-          <option value="all">Все бренды</option>
+          <option value="all">Усі бренди</option>
           {brands.map((brand) => (
             <option key={brand} value={brand}>
               {brand}
@@ -210,7 +210,7 @@ export function AdminProductsClient({ products }: { products: AdminProduct[] }) 
           ))}
         </select>
         <select value={selectedStatus} onChange={(event) => setSelectedStatus(event.target.value)}>
-          <option value="all">Все статусы</option>
+          <option value="all">Усі статуси</option>
           {PRODUCT_STATUSES.map((status) => (
             <option key={status} value={status}>
               {status}
@@ -218,7 +218,7 @@ export function AdminProductsClient({ products }: { products: AdminProduct[] }) 
           ))}
         </select>
         <select value={selectedSize} onChange={(event) => setSelectedSize(event.target.value)}>
-          <option value="all">Все размеры</option>
+          <option value="all">Усі розміри</option>
           {sizes.map((size) => (
             <option key={size} value={size}>
               {size}
@@ -230,14 +230,14 @@ export function AdminProductsClient({ products }: { products: AdminProduct[] }) 
           inputMode="decimal"
           value={minPrice}
           onChange={(event) => setMinPrice(event.target.value)}
-          placeholder="Цена от"
+          placeholder="Ціна від"
         />
         <input
           type="text"
           inputMode="decimal"
           value={maxPrice}
           onChange={(event) => setMaxPrice(event.target.value)}
-          placeholder="Цена до"
+          placeholder="Ціна до"
         />
       </div>
       <div className="panel tableWrap">
@@ -247,19 +247,19 @@ export function AdminProductsClient({ products }: { products: AdminProduct[] }) 
               <th />
               <th>Артикул</th>
               <th>Код</th>
-              <th>Название</th>
-              <th>Категория</th>
-              <th>Размер</th>
-              <th>Цена</th>
-              <th>Остаток</th>
-              <th>Склады</th>
+              <th>Назва</th>
+              <th>Категорія</th>
+              <th>Розмір</th>
+              <th>Ціна</th>
+              <th>Залишок</th>
+              <th>Склади</th>
               <th>Статус</th>
               <th />
             </tr>
           </thead>
           <tbody>
             {filteredProducts.map((product) => {
-              const status = rows[product.id] ?? ((product.status as ProductStatus) || (product.stock > 0 ? "Активен" : "Нет в наличии"));
+              const status = rows[product.id] ?? ((product.status as ProductStatus) || (product.stock > 0 ? "Активний" : "Немає в наявності"));
 
               return (
                 <tr key={product.id}>
@@ -268,7 +268,7 @@ export function AdminProductsClient({ products }: { products: AdminProduct[] }) 
                       type="checkbox"
                       checked={exportUi.selectedIds.includes(product.id)}
                       onChange={() => exportUi.toggleOne(product.id)}
-                      aria-label={`Выбрать товар ${product.name}`}
+                      aria-label={`Вибрати товар ${product.name}`}
                     />
                   </td>
                   <td>{product.sku}</td>
@@ -307,7 +307,7 @@ export function AdminProductsClient({ products }: { products: AdminProduct[] }) 
                       onClick={() => saveProduct(product)}
                       disabled={savingId === product.id}
                     >
-                      {savingId === product.id ? "Сохранение..." : "Сохранить"}
+                      {savingId === product.id ? "Збереження..." : "Зберегти"}
                     </button>
                   </td>
                 </tr>
@@ -315,7 +315,7 @@ export function AdminProductsClient({ products }: { products: AdminProduct[] }) 
             })}
           </tbody>
         </table>
-        {filteredProducts.length === 0 ? <p>По текущим фильтрам товары не найдены.</p> : null}
+        {filteredProducts.length === 0 ? <p>За поточними фільтрами товари не знайдено.</p> : null}
       </div>
     </section>
   );

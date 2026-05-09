@@ -24,7 +24,7 @@ export function LoginForm({ nextPath }: { nextPath: string }) {
     const data = await response.json();
 
     if (!response.ok) {
-      setError(data.error ?? "Не удалось войти.");
+      setError(data.error ?? "Не вдалося увійти.");
       setLoading(false);
       return;
     }
@@ -35,8 +35,8 @@ export function LoginForm({ nextPath }: { nextPath: string }) {
 
   return (
     <form className="panel formGrid loginCard" onSubmit={handleSubmit}>
-      <h1>Вход в админку</h1>
-      <p>Используйте email и пароль администратора из `.env` или из базы проекта.</p>
+      <h1>Вхід до адмінки</h1>
+      <p>Використовуйте email і пароль адміністратора з `.env` або з бази проєкту.</p>
       <input value={email} onChange={(event) => setEmail(event.target.value)} type="email" placeholder="Email" required />
       <input
         value={password}
@@ -47,7 +47,7 @@ export function LoginForm({ nextPath }: { nextPath: string }) {
       />
       {error ? <p className="errorText">{error}</p> : null}
       <button type="submit" className="button primary" disabled={loading}>
-        {loading ? "Входим..." : "Войти"}
+        {loading ? "Входимо..." : "Увійти"}
       </button>
     </form>
   );
@@ -64,7 +64,7 @@ export function LogoutButton() {
 
   return (
     <button type="button" className="button secondary" onClick={handleLogout}>
-      Выйти
+      Вийти
     </button>
   );
 }

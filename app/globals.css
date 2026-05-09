@@ -281,7 +281,7 @@ p { color: var(--muted); }
   box-shadow: var(--shadow);
 }
 
-.panel { padding: 1.25rem; }
+.panel { padding: 1rem; }
 .heroCard { position: relative; min-height: 480px; overflow: hidden; }
 .cover { object-fit: cover; }
 .floatingCard {
@@ -532,17 +532,68 @@ p { color: var(--muted); }
 .adminSidebar .brand {
   color: #ffffff;
 }
-.adminContent { padding-top: 2rem; padding-bottom: 2rem; }
-.adminHeader { display: grid; grid-template-columns: 1fr auto; gap: 1rem; align-items: end; }
-.toolbar, .splitGrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; }
-.editorGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.adminContent { padding-top: 1.5rem; padding-bottom: 1.5rem; }
+.adminHeader { display: grid; grid-template-columns: 1fr auto; gap: .75rem; align-items: end; }
+.toolbar, .splitGrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: .75rem; }
+.editorGrid { grid-template-columns: minmax(0, 1.05fr) minmax(320px, .95fr); gap: 1rem; align-items: start; }
 .singleColumn { grid-template-columns: 1fr; }
 .formGrid input, .formGrid textarea, .formGrid select, .toolbar input, .toolbar select, .filterBlock input {
   width: 100%;
   border: 1px solid var(--line);
   border-radius: 12px;
-  padding: .95rem 1rem;
+  padding: .8rem .9rem;
   background: #ffffff;
+}
+.formGrid {
+  gap: .8rem;
+}
+.formField {
+  display: grid;
+  gap: .45rem;
+}
+.formField > span {
+  font-size: .92rem;
+  font-weight: 600;
+}
+.formField .helperText {
+  font-size: .78rem;
+  line-height: 1.35;
+}
+.sectionHeading.compact p {
+  margin: .25rem 0 0;
+}
+.editorGrid .panel {
+  border-radius: 14px;
+}
+.editorGrid .sectionHeading .eyebrow {
+  margin-bottom: .35rem;
+}
+.editorGrid .actions {
+  gap: .6rem;
+}
+.adminMultiChips {
+  gap: .45rem;
+}
+.adminMultiChips .chip {
+  padding: .55rem .8rem;
+  font-size: .86rem;
+}
+.tableWrap table th,
+.tableWrap table td {
+  padding: .75rem .65rem;
+}
+.compactAdminCard {
+  gap: .75rem;
+}
+.compactAdminCard textarea {
+  min-height: 110px;
+}
+.compactAdminCard .productGalleryThumbs {
+  gap: .5rem;
+}
+.compactAdminCard .galleryThumb {
+  width: 72px;
+  height: 72px;
 }
 .tableWrap { overflow-x: auto; }
 table { width: 100%; border-collapse: collapse; }

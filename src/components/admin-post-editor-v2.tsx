@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import Image from "next/image";
 import { useRouter } from "next/navigation";
@@ -139,13 +139,13 @@ export function AdminPostEditorV2({ post }: { post: AdminPost | null }) {
       setError(
         fieldErrors.length > 0
           ? fieldErrors.join(" | ")
-          : data.error ?? "Не удалось сохранить пост."
+          : data.error ?? "Не вдалося зберегти допис."
       );
       setLoading(false);
       return;
     }
 
-    setMessage(post ? "Пост обновлен." : "Пост создан.");
+    setMessage(post ? "Допис оновлено." : "Допис створено.");
     if (!post) {
       router.push(`/admin/post/${data.id}`);
     }
@@ -171,7 +171,7 @@ export function AdminPostEditorV2({ post }: { post: AdminPost | null }) {
     const data = await response.json();
 
     if (!response.ok) {
-      setError(data.error ?? "Не удалось загрузить изображение.");
+      setError(data.error ?? "Не вдалося завантажити зображення.");
       setUploadingCover(false);
       setUploadingEditorImage(false);
       return;
@@ -203,7 +203,7 @@ export function AdminPostEditorV2({ post }: { post: AdminPost | null }) {
     if (!editor) return;
 
     const previousUrl = editor.getAttributes("link").href as string | undefined;
-    const url = window.prompt("Вставьте ссылку", previousUrl ?? "https://");
+    const url = window.prompt("Вставте посилання", previousUrl ?? "https://");
 
     if (url === null) {
       return;
@@ -221,16 +221,16 @@ export function AdminPostEditorV2({ post }: { post: AdminPost | null }) {
     <section className="adminPage">
       <div className="adminHeader">
         <div>
-          <span className="eyebrow">Пост</span>
-          <h1>Создание и редактирование поста</h1>
+          <span className="eyebrow">Допис</span>
+          <h1>Створення та редагування допису</h1>
         </div>
         <LogoutButton />
       </div>
 
       <form className="editorGrid singleColumn" onSubmit={handleSubmit}>
         <div className="panel formGrid">
-          <h2>Основное</h2>
-          <input value={form.title} onChange={(event) => updateTitle(event.target.value)} type="text" placeholder="Заголовок поста" required />
+          <h2>Основне</h2>
+          <input value={form.title} onChange={(event) => updateTitle(event.target.value)} type="text" placeholder="Заголовок допису" required />
           <div className="splitGrid">
             <input
               value={form.titleI18n.ru}
@@ -241,7 +241,7 @@ export function AdminPostEditorV2({ post }: { post: AdminPost | null }) {
                 }))
               }
               type="text"
-              placeholder="Заголовок на русском"
+              placeholder="Заголовок російською"
             />
             <input
               value={form.titleI18n.en}
@@ -262,11 +262,11 @@ export function AdminPostEditorV2({ post }: { post: AdminPost | null }) {
               updateForm("slug", event.target.value);
             }}
             type="text"
-            placeholder="URL поста"
+            placeholder="URL допису"
             required
           />
-          <input value={form.category} onChange={(event) => updateForm("category", event.target.value)} type="text" placeholder="Категория" required />
-          <textarea value={form.excerpt} onChange={(event) => updateForm("excerpt", event.target.value)} rows={4} placeholder="Краткое описание для карточки поста" required />
+          <input value={form.category} onChange={(event) => updateForm("category", event.target.value)} type="text" placeholder="Категорія" required />
+          <textarea value={form.excerpt} onChange={(event) => updateForm("excerpt", event.target.value)} rows={4} placeholder="Короткий опис для картки допису" required />
           <div className="splitGrid">
             <textarea
               value={form.excerptI18n.ru}
@@ -277,7 +277,7 @@ export function AdminPostEditorV2({ post }: { post: AdminPost | null }) {
                 }))
               }
               rows={4}
-              placeholder="Краткое описание на русском"
+              placeholder="Короткий опис російською"
             />
             <textarea
               value={form.excerptI18n.en}
@@ -294,8 +294,8 @@ export function AdminPostEditorV2({ post }: { post: AdminPost | null }) {
         </div>
 
         <div className="panel formGrid">
-          <h2>Обложка</h2>
-          <input value={form.cover} onChange={(event) => updateForm("cover", event.target.value)} type="text" placeholder="URL или /uploads/..." required />
+          <h2>Обкладинка</h2>
+          <input value={form.cover} onChange={(event) => updateForm("cover", event.target.value)} type="text" placeholder="URL або /uploads/..." required />
           <input
             type="file"
             accept="image/png,image/jpeg,image/webp,image/gif"
@@ -306,10 +306,10 @@ export function AdminPostEditorV2({ post }: { post: AdminPost | null }) {
               }
             }}
           />
-          {uploadingCover ? <p>Загружаем обложку...</p> : null}
+          {uploadingCover ? <p>Завантажуємо обкладинку...</p> : null}
           {form.cover ? (
             <div className="postEditorPreviewImage">
-              <Image src={form.cover} alt={form.title || "Обложка"} width={1200} height={700} className="cardImage" />
+              <Image src={form.cover} alt={form.title || "Обкладинка"} width={1200} height={700} className="cardImage" />
             </div>
           ) : null}
         </div>
@@ -348,20 +348,20 @@ export function AdminPostEditorV2({ post }: { post: AdminPost | null }) {
             }}
           />
 
-          {uploadingEditorImage ? <p>Загружаем изображение в статью...</p> : null}
+          {uploadingEditorImage ? <p>Завантажуємо зображення в статтю...</p> : null}
           <EditorContent editor={editor} />
         </div>
 
         <div className="panel formGrid">
-          <h2>Публикация</h2>
+          <h2>Публікація</h2>
           <label className="checkbox">
             <input type="checkbox" checked={form.published} onChange={(event) => updateForm("published", event.target.checked)} />
-            Опубликовать пост
+            Опублікувати допис
           </label>
           {error ? <p className="errorText">{error}</p> : null}
           {message ? <p className="successText">{message}</p> : null}
           <button type="submit" className="button primary" disabled={loading || !editor}>
-            {loading ? "Сохраняем..." : post ? "Сохранить изменения" : "Создать пост"}
+            {loading ? "Зберігаємо..." : post ? "Зберегти зміни" : "Створити допис"}
           </button>
         </div>
       </form>
@@ -429,4 +429,3 @@ function escapeHtml(value: string) {
 function escapeAttribute(value: string) {
   return escapeHtml(value).replaceAll("'", "&#39;");
 }
-

@@ -7,7 +7,7 @@ import { LogoutButton } from "@/components/admin-forms";
 import type { AdminPost } from "@/components/admin-ui";
 
 function formatDate(date: Date) {
-  return new Intl.DateTimeFormat("ru-RU", {
+  return new Intl.DateTimeFormat("uk-UA", {
     day: "2-digit",
     month: "long",
     year: "numeric"
@@ -30,13 +30,13 @@ export function AdminNewsClient({ initialPosts }: { initialPosts: AdminPost[] })
     const data = await response.json();
 
     if (!response.ok) {
-      setError(data.error ?? "Не удалось удалить пост.");
+      setError(data.error ?? "Не вдалося видалити допис.");
       setLoadingId("");
       return;
     }
 
     setPosts((current) => current.filter((post) => post.id !== postId));
-    setMessage("Пост удалён.");
+    setMessage("Допис видалено.");
     setLoadingId("");
     router.refresh();
   }
@@ -45,11 +45,11 @@ export function AdminNewsClient({ initialPosts }: { initialPosts: AdminPost[] })
     <section className="adminPage">
       <div className="adminHeader">
         <div>
-          <span className="eyebrow">Новости</span>
-          <h1>Список постов</h1>
+          <span className="eyebrow">Новини</span>
+          <h1>Список дописів</h1>
         </div>
         <div className="actions">
-          <Link href="/admin/post/new" className="button primary">Создать пост</Link>
+          <Link href="/admin/post/new" className="button primary">Створити допис</Link>
           <LogoutButton />
         </div>
       </div>
@@ -68,7 +68,7 @@ export function AdminNewsClient({ initialPosts }: { initialPosts: AdminPost[] })
               <p>{post.excerpt}</p>
               <div className="actions">
                 <Link href={`/admin/post/${post.id}`} className="button secondary">
-                  Редактировать
+                  Редагувати
                 </Link>
                 <button
                   type="button"
@@ -76,7 +76,7 @@ export function AdminNewsClient({ initialPosts }: { initialPosts: AdminPost[] })
                   disabled={isDeleting}
                   onClick={() => handleDelete(post.id)}
                 >
-                  {isDeleting ? "Удаляем..." : "Удалить"}
+                  {isDeleting ? "Видаляємо..." : "Видалити"}
                 </button>
               </div>
             </article>

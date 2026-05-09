@@ -68,6 +68,7 @@ model Post {
 model Category {
   id        String   @id @default(cuid())
   name      String   @unique
+  nameI18n  Json?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -75,6 +76,7 @@ model Category {
 model Brand {
   id        String   @id @default(cuid())
   name      String   @unique
+  nameI18n  Json?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -82,6 +84,7 @@ model Brand {
 model Season {
   id        String   @id @default(cuid())
   name      String   @unique
+  nameI18n  Json?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -89,6 +92,31 @@ model Season {
 model Warehouse {
   id        String   @id @default(cuid())
   name      String   @unique
+  nameI18n  Json?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Color {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  nameI18n  Json?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Size {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  nameI18n  Json?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Material {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  nameI18n  Json?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }

@@ -20,6 +20,7 @@ type AdminProduct = {
   category: string;
   brand: string;
   size: string;
+  sizes: string[];
   centimeters: string;
   ageGroup: string;
   audience: string;
@@ -29,6 +30,7 @@ type AdminProduct = {
   stock: number;
   material: string;
   colors: string[];
+  materials: string[];
   badge: string | null;
   description: string;
   descriptionI18n?: Record<string, string>;
@@ -58,40 +60,43 @@ export function AdminShell({ children }: { children: ReactNode }) {
     <div className="adminShell">
       <aside className="adminSidebar">
         <Link href="/" className="brand">Standard Shop</Link>
-        <span className="sidebarLabel">Админ-панель</span>
+        <span className="sidebarLabel">Адмін-панель</span>
         <nav className="adminNavGroups">
           <div className="adminNavGroup">
-            <span className="adminNavHeading">Товары</span>
+            <span className="adminNavHeading">Товари</span>
             <div className="adminNav">
-              <Link href="/admin/products">Все товары</Link>
-              <Link href="/admin/product/new">Новый товар</Link>
-              <Link href="/admin/categories">Категории</Link>
-              <Link href="/admin/brands">Бренды</Link>
-              <Link href="/admin/seasons">Сезоны</Link>
-              <Link href="/admin/warehouses">Склады</Link>
+              <Link href="/admin/products">Усі товари</Link>
+              <Link href="/admin/product/new">Новий товар</Link>
+              <Link href="/admin/categories">Категорії</Link>
+              <Link href="/admin/brands">Бренди</Link>
+              <Link href="/admin/seasons">Сезони</Link>
+              <Link href="/admin/colors">Кольори</Link>
+              <Link href="/admin/sizes">Розміри</Link>
+              <Link href="/admin/materials">Матеріали</Link>
+              <Link href="/admin/warehouses">Склади</Link>
             </div>
           </div>
 
           <div className="adminNavGroup">
-            <span className="adminNavHeading">Заказы</span>
+            <span className="adminNavHeading">Замовлення</span>
             <div className="adminNav">
-              <Link href="/admin/orders">Все заказы</Link>
-              <Link href="/admin/orders/new">Новый заказ</Link>
+              <Link href="/admin/orders">Усі замовлення</Link>
+              <Link href="/admin/orders/new">Нове замовлення</Link>
             </div>
           </div>
 
           <div className="adminNavGroup">
-            <span className="adminNavHeading">Клиенты</span>
+            <span className="adminNavHeading">Клієнти</span>
             <div className="adminNav">
-              <Link href="/admin/clients">База клиентов</Link>
+              <Link href="/admin/clients">База клієнтів</Link>
             </div>
           </div>
 
           <div className="adminNavGroup">
             <span className="adminNavHeading">Контент</span>
             <div className="adminNav">
-              <Link href="/admin/news">Новости</Link>
-              <Link href="/admin/post/new">Новый пост</Link>
+              <Link href="/admin/news">Новини</Link>
+              <Link href="/admin/post/new">Новий допис</Link>
             </div>
           </div>
         </nav>
@@ -106,18 +111,18 @@ export function AdminProductsList({ products }: { products: AdminProduct[] }) {
     <section className="adminPage">
       <div className="adminHeader">
         <div>
-          <span className="eyebrow">Товары</span>
-          <h1>Список товаров</h1>
+          <span className="eyebrow">Товари</span>
+          <h1>Список товарів</h1>
         </div>
-        <Link href="/admin/product/new" className="button primary">Создать товар</Link>
+        <Link href="/admin/product/new" className="button primary">Створити товар</Link>
       </div>
       <div className="panel toolbar">
-        <input type="search" placeholder="Поиск по названию или SKU" disabled />
+        <input type="search" placeholder="Пошук за назвою або SKU" disabled />
         <select defaultValue="all" disabled>
-          <option value="all">Все категории</option>
+          <option value="all">Усі категорії</option>
         </select>
         <select defaultValue="active" disabled>
-          <option value="active">Активные</option>
+          <option value="active">Активні</option>
         </select>
       </div>
       <div className="panel tableWrap">
@@ -125,10 +130,10 @@ export function AdminProductsList({ products }: { products: AdminProduct[] }) {
           <thead>
             <tr>
               <th>Артикул</th>
-              <th>Название</th>
-              <th>Категория</th>
-              <th>Цена</th>
-              <th>Остаток</th>
+              <th>Назва</th>
+              <th>Категорія</th>
+              <th>Ціна</th>
+              <th>Залишок</th>
               <th>Статус</th>
             </tr>
           </thead>
@@ -144,7 +149,7 @@ export function AdminProductsList({ products }: { products: AdminProduct[] }) {
                 <td>{product.category}</td>
                 <td>{product.price} грн</td>
                 <td>{product.stock}</td>
-                <td>{product.stock > 0 ? "Активен" : "Нет в наличии"}</td>
+                <td>{product.stock > 0 ? "Активний" : "Немає в наявності"}</td>
               </tr>
             ))}
           </tbody>
@@ -159,10 +164,10 @@ export function AdminNewsList({ posts }: { posts: AdminPost[] }) {
     <section className="adminPage">
       <div className="adminHeader">
         <div>
-          <span className="eyebrow">Новости</span>
-          <h1>Список постов</h1>
+          <span className="eyebrow">Новини</span>
+          <h1>Список дописів</h1>
         </div>
-        <Link href="/admin/post/new" className="button primary">Создать пост</Link>
+        <Link href="/admin/post/new" className="button primary">Створити допис</Link>
       </div>
       <div className="blogGrid">
         {posts.map((post) => (
@@ -173,7 +178,7 @@ export function AdminNewsList({ posts }: { posts: AdminPost[] }) {
             </div>
             <h2>{post.title}</h2>
             <p>{post.excerpt}</p>
-            <Link href={`/admin/post/${post.id}`}>Редактировать</Link>
+            <Link href={`/admin/post/${post.id}`}>Редагувати</Link>
           </article>
         ))}
       </div>
@@ -182,7 +187,7 @@ export function AdminNewsList({ posts }: { posts: AdminPost[] }) {
 }
 
 function formatDate(date: Date) {
-  return new Intl.DateTimeFormat("ru-RU", {
+  return new Intl.DateTimeFormat("uk-UA", {
     day: "2-digit",
     month: "long",
     year: "numeric"
@@ -190,4 +195,3 @@ function formatDate(date: Date) {
 }
 
 export type { AdminPost, AdminProduct };
-

@@ -1,14 +1,13 @@
 import { createAttributeRoute } from "@/lib/admin-attribute-route";
 
 const route = createAttributeRoute({
-  key: "warehouses",
-  label: "склад",
-  isUsed: (product, name) => product.warehouseStock.some((entry) => entry.warehouse === name && entry.quantity > 0),
+  key: "sizes",
+  label: "размер",
+  isUsed: (product, name) => product.sizes.includes(name),
   replaceInProduct: (product, currentName, nextName) => ({
     ...product,
-    warehouseStock: product.warehouseStock.map((entry) =>
-      entry.warehouse === currentName ? { ...entry, warehouse: nextName } : entry
-    )
+    sizes: product.sizes.map((item) => (item === currentName ? nextName : item)),
+    size: product.sizes.map((item) => (item === currentName ? nextName : item)).join(" | ")
   })
 });
 

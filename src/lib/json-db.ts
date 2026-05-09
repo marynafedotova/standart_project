@@ -12,6 +12,11 @@ export type DbWarehouseStock = {
   quantity: number;
 };
 
+export type DbNamedEntity = {
+  name: string;
+  nameI18n?: Record<string, string>;
+};
+
 export type DbProduct = {
   id: string;
   sku: string;
@@ -34,6 +39,8 @@ export type DbProduct = {
   stock: number;
   material: string;
   colors: string[];
+  materials: string[];
+  sizes: string[];
   badge: string | null;
   description: string;
   descriptionI18n?: Record<string, string>;
@@ -126,10 +133,13 @@ export type DbClient = {
 
 export type Database = {
   adminUsers: DbAdminUser[];
-  categories: string[];
-  brands: string[];
-  seasons: string[];
-  warehouses: string[];
+  categories: DbNamedEntity[];
+  brands: DbNamedEntity[];
+  seasons: DbNamedEntity[];
+  warehouses: DbNamedEntity[];
+  colors: DbNamedEntity[];
+  sizes: DbNamedEntity[];
+  materials: DbNamedEntity[];
   products: DbProduct[];
   posts: DbPost[];
   orders: DbOrder[];
@@ -146,6 +156,10 @@ function calculateOrderTotal(items: DbOrderItem[]) {
 
 function asStringArray(value: unknown): string[] {
   return Array.isArray(value) ? value.filter((item): item is string => typeof item === "string") : [];
+}
+
+function asTrimmedUniqueArray(value: unknown): string[] {
+  return Array.from(new Set(asStringArray(value).map((item) => item.trim()).filter(Boolean)));
 }
 
 function asNumberArray(value: unknown): number[] {
@@ -202,6 +216,13 @@ function asLocaleMap(value: unknown): Record<string, string> | undefined {
   }
 
   return Object.fromEntries(entries);
+}
+
+function asNamedEntity(value: { name: string; nameI18n?: unknown }): DbNamedEntity {
+  return {
+    name: value.name,
+    nameI18n: asLocaleMap(value.nameI18n)
+  };
 }
 function asPostBlocks(value: unknown, content: string[]): DbPostBlock[] {
   if (Array.isArray(value)) {
@@ -274,6 +295,12 @@ function mapProduct(product: NonNullable<ProductRecord>, skuMap: Map<string, str
     stock: totalStock,
     material: product.material || "",
     colors: asStringArray(product.colors),
+    materials: asTrimmedUniqueArray((product as { materials?: unknown }).materials).length > 0
+      ? asTrimmedUniqueArray((product as { materials?: unknown }).materials)
+      : (product.material ? [product.material] : []),
+    sizes: asTrimmedUniqueArray((product as { sizes?: unknown }).sizes).length > 0
+      ? asTrimmedUniqueArray((product as { sizes?: unknown }).sizes)
+      : (product.size ? parseMultiValue(product.size) : []),
     badge: product.badge ?? null,
     description: product.description || "",
     descriptionI18n: asLocaleMap((product as { descriptionI18n?: unknown }).descriptionI18n),
@@ -384,14 +411,26 @@ export async function readDb(): Promise<Database> {
     warehouse?: {
       findMany: (args: { orderBy: { name: "asc" } }) => Promise<Array<{ name: string }>>;
     };
+    color?: {
+      findMany: (args: { orderBy: { name: "asc" } }) => Promise<Array<{ name: string }>>;
+    };
+    size?: {
+      findMany: (args: { orderBy: { name: "asc" } }) => Promise<Array<{ name: string }>>;
+    };
+    material?: {
+      findMany: (args: { orderBy: { name: "asc" } }) => Promise<Array<{ name: string }>>;
+    };
   };
 
-  const [adminUsers, categoryRows, brandRows, seasonRows, warehouseRows, products, posts, orders, clients] = await Promise.all([
+  const [adminUsers, categoryRows, brandRows, seasonRows, warehouseRows, colorRows, sizeRows, materialRows, products, posts, orders, clients] = await Promise.all([
     prisma.adminUser.findMany({ orderBy: { createdAt: "asc" } }),
     prisma.category.findMany({ orderBy: { name: "asc" } }),
     prisma.brand.findMany({ orderBy: { createdAt: "asc" } }),
     prismaWithOptionalSeason.season?.findMany({ orderBy: { name: "asc" } }) ?? Promise.resolve([]),
     prismaWithOptionalSeason.warehouse?.findMany({ orderBy: { name: "asc" } }) ?? Promise.resolve([]),
+    prismaWithOptionalSeason.color?.findMany({ orderBy: { name: "asc" } }) ?? Promise.resolve([]),
+    prismaWithOptionalSeason.size?.findMany({ orderBy: { name: "asc" } }) ?? Promise.resolve([]),
+    prismaWithOptionalSeason.material?.findMany({ orderBy: { name: "asc" } }) ?? Promise.resolve([]),
     prisma.product.findMany({ orderBy: { createdAt: "desc" } }),
     prisma.post.findMany({ orderBy: { createdAt: "desc" } }),
     prisma.order.findMany({ orderBy: { createdAt: "desc" } }),
@@ -413,24 +452,46 @@ export async function readDb(): Promise<Database> {
     })),
     categories:
       categoryRows.length > 0
-        ? categoryRows.map((item) => item.name)
-        : [...new Set(mappedProducts.flatMap((item) => parseMultiValue(item.category)))].sort((a, b) => a.localeCompare(b)),
+        ? categoryRows.map((item) => asNamedEntity({ name: item.name, nameI18n: (item as { nameI18n?: unknown }).nameI18n }))
+        : [...new Set(mappedProducts.flatMap((item) => parseMultiValue(item.category)))]
+            .sort((a, b) => a.localeCompare(b))
+            .map((name) => ({ name })),
     brands:
       brandRows.length > 0
-        ? brandRows.map((item) => item.name)
-        : [...new Set(mappedProducts.map((item) => item.brand).filter(Boolean))].sort((a, b) => a.localeCompare(b)),
+        ? brandRows.map((item) => asNamedEntity({ name: item.name, nameI18n: (item as { nameI18n?: unknown }).nameI18n }))
+        : [...new Set(mappedProducts.map((item) => item.brand).filter(Boolean))]
+            .sort((a, b) => a.localeCompare(b))
+            .map((name) => ({ name })),
     seasons:
       seasonRows.length > 0
-        ? seasonRows.map((item) => item.name)
-        : [...new Set(mappedProducts.flatMap((item) => parseMultiValue(item.season)))].sort((a, b) => a.localeCompare(b)),
+        ? seasonRows.map((item) => asNamedEntity({ name: item.name, nameI18n: (item as { nameI18n?: unknown }).nameI18n }))
+        : [...new Set(mappedProducts.flatMap((item) => parseMultiValue(item.season)))]
+            .sort((a, b) => a.localeCompare(b))
+            .map((name) => ({ name })),
     warehouses:
       warehouseRows.length > 0
-        ? warehouseRows.map((item) => item.name)
-        : [
-            ...new Set(
-              mappedProducts.flatMap((item) => item.warehouseStock.map((entry) => entry.warehouse)).filter(Boolean)
-            )
-          ].sort((a, b) => a.localeCompare(b)),
+        ? warehouseRows.map((item) => asNamedEntity({ name: item.name, nameI18n: (item as { nameI18n?: unknown }).nameI18n }))
+        : [...new Set(mappedProducts.flatMap((item) => item.warehouseStock.map((entry) => entry.warehouse)).filter(Boolean))]
+            .sort((a, b) => a.localeCompare(b))
+            .map((name) => ({ name })),
+    colors:
+      colorRows.length > 0
+        ? colorRows.map((item) => asNamedEntity({ name: item.name, nameI18n: (item as { nameI18n?: unknown }).nameI18n }))
+        : [...new Set(mappedProducts.flatMap((item) => item.colors))]
+            .sort((a, b) => a.localeCompare(b))
+            .map((name) => ({ name })),
+    sizes:
+      sizeRows.length > 0
+        ? sizeRows.map((item) => asNamedEntity({ name: item.name, nameI18n: (item as { nameI18n?: unknown }).nameI18n }))
+        : [...new Set(mappedProducts.flatMap((item) => item.sizes))]
+            .sort((a, b) => a.localeCompare(b))
+            .map((name) => ({ name })),
+    materials:
+      materialRows.length > 0
+        ? materialRows.map((item) => asNamedEntity({ name: item.name, nameI18n: (item as { nameI18n?: unknown }).nameI18n }))
+        : [...new Set(mappedProducts.flatMap((item) => item.materials))]
+            .sort((a, b) => a.localeCompare(b))
+            .map((name) => ({ name })),
     products: mappedProducts,
     posts: posts.map(mapPost),
     orders: orders.map(mapOrder),
@@ -450,6 +511,18 @@ export async function writeDb(data: Database) {
       deleteMany: () => Promise<unknown>;
       create: (args: { data: { name: string } }) => Promise<unknown>;
     };
+    color?: {
+      deleteMany: () => Promise<unknown>;
+      create: (args: { data: { name: string } }) => Promise<unknown>;
+    };
+    size?: {
+      deleteMany: () => Promise<unknown>;
+      create: (args: { data: { name: string } }) => Promise<unknown>;
+    };
+    material?: {
+      deleteMany: () => Promise<unknown>;
+      create: (args: { data: { name: string } }) => Promise<unknown>;
+    };
   };
 
   await prisma.client.deleteMany();
@@ -461,6 +534,15 @@ export async function writeDb(data: Database) {
   }
   if (prismaWithOptionalSeason.warehouse) {
     await prismaWithOptionalSeason.warehouse.deleteMany();
+  }
+  if (prismaWithOptionalSeason.color) {
+    await prismaWithOptionalSeason.color.deleteMany();
+  }
+  if (prismaWithOptionalSeason.size) {
+    await prismaWithOptionalSeason.size.deleteMany();
+  }
+  if (prismaWithOptionalSeason.material) {
+    await prismaWithOptionalSeason.material.deleteMany();
   }
   await prisma.brand.deleteMany();
   await prisma.category.deleteMany();
@@ -509,36 +591,74 @@ export async function writeDb(data: Database) {
     });
   }
 
-  for (const category of Array.from(new Set(data.categories.map((item) => item.trim()).filter(Boolean)))) {
-    await prisma.category.create({ data: { name: category } });
+  for (const category of Array.from(new Map(data.categories.map((item) => [item.name.trim(), item])).values()).filter((item) => item.name)) {
+    await prisma.category.create({ data: { name: category.name } });
+    await prisma.$executeRaw`UPDATE "Category" SET "nameI18n" = ${JSON.stringify(category.nameI18n ?? null)}::jsonb WHERE "name" = ${category.name}`;
   }
 
-  for (const brand of Array.from(new Set(data.brands.map((item) => item.trim()).filter(Boolean)))) {
-    await prisma.brand.create({ data: { name: brand } });
+  for (const brand of Array.from(new Map(data.brands.map((item) => [item.name.trim(), item])).values()).filter((item) => item.name)) {
+    await prisma.brand.create({ data: { name: brand.name } });
+    await prisma.$executeRaw`UPDATE "Brand" SET "nameI18n" = ${JSON.stringify(brand.nameI18n ?? null)}::jsonb WHERE "name" = ${brand.name}`;
   }
 
   if (prismaWithOptionalSeason.season) {
-    for (const season of Array.from(new Set(data.seasons.map((item) => item.trim()).filter(Boolean)))) {
-      await prismaWithOptionalSeason.season.create({ data: { name: season } });
+    for (const season of Array.from(new Map(data.seasons.map((item) => [item.name.trim(), item])).values()).filter((item) => item.name)) {
+      await prismaWithOptionalSeason.season.create({ data: { name: season.name } });
+      await prisma.$executeRaw`UPDATE "Season" SET "nameI18n" = ${JSON.stringify(season.nameI18n ?? null)}::jsonb WHERE "name" = ${season.name}`;
     }
   }
 
   const warehouseNames = Array.from(
     new Set([
-      ...data.warehouses.map((item) => item.trim()).filter(Boolean),
+      ...data.warehouses.map((item) => item.name.trim()).filter(Boolean),
       ...data.products.flatMap((product) => product.warehouseStock.map((entry) => entry.warehouse.trim())).filter(Boolean)
     ])
   );
 
   if (prismaWithOptionalSeason.warehouse) {
     for (const warehouse of warehouseNames) {
+      const warehouseEntity = data.warehouses.find((item) => item.name === warehouse);
       await prismaWithOptionalSeason.warehouse.create({ data: { name: warehouse } });
+      await prisma.$executeRaw`UPDATE "Warehouse" SET "nameI18n" = ${JSON.stringify(warehouseEntity?.nameI18n ?? null)}::jsonb WHERE "name" = ${warehouse}`;
+    }
+  }
+
+  if (prismaWithOptionalSeason.color) {
+    for (const color of Array.from(new Set([
+      ...data.colors.map((item) => item.name.trim()).filter(Boolean),
+      ...data.products.flatMap((product) => product.colors.map((item) => item.trim())).filter(Boolean)
+    ]))) {
+      await prismaWithOptionalSeason.color.create({ data: { name: color } });
+      await prisma.$executeRaw`UPDATE "Color" SET "nameI18n" = ${JSON.stringify(data.colors.find((item) => item.name === color)?.nameI18n ?? null)}::jsonb WHERE "name" = ${color}`;
+    }
+  }
+
+  if (prismaWithOptionalSeason.size) {
+    for (const size of Array.from(new Set([
+      ...data.sizes.map((item) => item.name.trim()).filter(Boolean),
+      ...data.products.flatMap((product) => product.sizes.map((item) => item.trim())).filter(Boolean)
+    ]))) {
+      await prismaWithOptionalSeason.size.create({ data: { name: size } });
+      await prisma.$executeRaw`UPDATE "Size" SET "nameI18n" = ${JSON.stringify(data.sizes.find((item) => item.name === size)?.nameI18n ?? null)}::jsonb WHERE "name" = ${size}`;
+    }
+  }
+
+  if (prismaWithOptionalSeason.material) {
+    for (const material of Array.from(new Set([
+      ...data.materials.map((item) => item.name.trim()).filter(Boolean),
+      ...data.products.flatMap((product) => product.materials.map((item) => item.trim())).filter(Boolean)
+    ]))) {
+      await prismaWithOptionalSeason.material.create({ data: { name: material } });
+      await prisma.$executeRaw`UPDATE "Material" SET "nameI18n" = ${JSON.stringify(data.materials.find((item) => item.name === material)?.nameI18n ?? null)}::jsonb WHERE "name" = ${material}`;
     }
   }
 
   for (const product of data.products) {
     const warehouseStock = asWarehouseStock(product.warehouseStock, product.stock);
     const totalStock = warehouseStock.reduce((sum, entry) => sum + entry.quantity, 0);
+    const productSizes = Array.from(new Set(product.sizes.map((item) => item.trim()).filter(Boolean)));
+    const productMaterials = Array.from(new Set(product.materials.map((item) => item.trim()).filter(Boolean)));
+    const productColors = Array.from(new Set(product.colors.map((item) => item.trim()).filter(Boolean)));
 
     await prisma.product.create({
       data: {
@@ -551,7 +671,7 @@ export async function writeDb(data: Database) {
         status: product.status,
         category: product.category,
         brand: product.brand,
-        size: product.size,
+        size: productSizes.join(" | "),
         centimeters: product.centimeters,
         ageGroup: product.ageGroup,
         audience: product.audience,
@@ -559,8 +679,8 @@ export async function writeDb(data: Database) {
         price: product.price,
         oldPrice: product.oldPrice,
         stock: totalStock,
-        material: product.material,
-        colors: product.colors,
+        material: productMaterials.join(", "),
+        colors: productColors,
         badge: product.badge,
         description: product.description,
         warehouseStock,
@@ -575,7 +695,13 @@ export async function writeDb(data: Database) {
       UPDATE "Product"
       SET
         "nameI18n" = ${JSON.stringify(product.nameI18n ?? null)}::jsonb,
-        "descriptionI18n" = ${JSON.stringify(product.descriptionI18n ?? null)}::jsonb
+        "descriptionI18n" = ${JSON.stringify(product.descriptionI18n ?? null)}::jsonb,
+        "colors" = ${JSON.stringify(productColors)}::jsonb,
+        "features" = ${JSON.stringify(product.features)}::jsonb,
+        "images" = ${JSON.stringify(uniqueImages([product.image, ...product.images]))}::jsonb,
+        "warehouseStock" = ${JSON.stringify(warehouseStock)}::jsonb,
+        "size" = ${productSizes.join(" | ")},
+        "material" = ${productMaterials.join(", ")}
       WHERE "id" = ${product.id}
     `;
   }

@@ -52,6 +52,18 @@ const warehouseStockSchema = z
       .filter((item) => item.warehouse.length > 0)
   );
 
+const productAttributeListSchema = z
+  .union([stringList, z.string().trim().optional().default("")])
+  .transform((value) =>
+    Array.isArray(value)
+      ? Array.from(new Set(value.map((item) => item.trim()).filter(Boolean)))
+      : value
+          .split("\n")
+          .flatMap((item) => item.split("|"))
+          .map((item) => item.trim())
+          .filter(Boolean)
+  );
+
 export const loginSchema = z.object({
   email: z.string().email(),
   password: z.string().min(8)
@@ -68,6 +80,7 @@ export const productSchema = z.object({
   category: multiValueSchema,
   brand: optionalText,
   size: optionalText,
+  sizes: productAttributeListSchema.optional().default([]),
   centimeters: optionalText,
   ageGroup: optionalText,
   audience: optionalText,
@@ -76,6 +89,7 @@ export const productSchema = z.object({
   oldPrice: z.union([z.coerce.number().nonnegative(), z.null()]).optional(),
   stock: z.coerce.number().int().nonnegative(),
   material: optionalText,
+  materials: productAttributeListSchema.optional().default([]),
   colors: z.union([stringList, z.string().trim().optional().default("")]).transform((value) =>
     Array.isArray(value)
       ? value

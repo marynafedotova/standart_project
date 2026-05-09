@@ -51,23 +51,38 @@ export async function POST(request: Request) {
     };
 
     for (const category of parseMultiValue(product.category)) {
-      if (!db.categories.includes(category)) {
-        db.categories.push(category);
+      if (!db.categories.some((item) => item.name === category)) {
+        db.categories.push({ name: category });
       }
     }
 
-    if (product.brand && !db.brands.includes(product.brand)) {
-      db.brands.push(product.brand);
+    if (product.brand && !db.brands.some((item) => item.name === product.brand)) {
+      db.brands.push({ name: product.brand });
     }
 
     for (const season of parseMultiValue(product.season)) {
-      if (!db.seasons.includes(season)) {
-        db.seasons.push(season);
+      if (!db.seasons.some((item) => item.name === season)) {
+        db.seasons.push({ name: season });
       }
     }
     for (const warehouse of normalizeWarehouseNames(product.warehouseStock)) {
-      if (!db.warehouses.includes(warehouse)) {
-        db.warehouses.push(warehouse);
+      if (!db.warehouses.some((item) => item.name === warehouse)) {
+        db.warehouses.push({ name: warehouse });
+      }
+    }
+    for (const color of product.colors) {
+      if (!db.colors.some((item) => item.name === color)) {
+        db.colors.push({ name: color });
+      }
+    }
+    for (const size of product.sizes ?? []) {
+      if (!db.sizes.some((item) => item.name === size)) {
+        db.sizes.push({ name: size });
+      }
+    }
+    for (const material of product.materials ?? []) {
+      if (!db.materials.some((item) => item.name === material)) {
+        db.materials.push({ name: material });
       }
     }
 

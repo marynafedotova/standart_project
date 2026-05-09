@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
@@ -48,7 +48,7 @@ type FieldErrors = {
   items?: string;
 };
 
-const DELIVERY_METHODS = ["Новая почта", "Міст Експрес", "Укрпошта", "Курьер", "Самовывоз"];
+const DELIVERY_METHODS = ["Нова пошта", "Meest", "Укрпошта", "Кур'єр", "Самовивіз"];
 
 async function readJsonSafely(response: Response) {
   const text = await response.text();
@@ -134,14 +134,14 @@ export function AdminOrderCreate({
   const [email, setEmail] = useState(initialOrder?.email ?? "");
   const [comment, setComment] = useState(initialOrder?.comment ?? "");
   const [managerComment, setManagerComment] = useState(initialOrder?.managerComment ?? "");
-  const [deliveryMethod, setDeliveryMethod] = useState(initialOrder?.deliveryMethod ?? "Новая почта");
-  const [paymentMethod, setPaymentMethod] = useState(initialOrder?.paymentMethod ?? "Наложенный платеж");
+  const [deliveryMethod, setDeliveryMethod] = useState(initialOrder?.deliveryMethod ?? "Нова пошта");
+  const [paymentMethod, setPaymentMethod] = useState(initialOrder?.paymentMethod ?? "Післяплата");
   const [region, setRegion] = useState(initialOrder?.region ?? "");
   const [city, setCity] = useState(initialOrder?.city ?? "");
-  const [novaPoshtaType, setNovaPoshtaType] = useState(initialOrder?.novaPoshtaType ?? "Отделение");
+  const [novaPoshtaType, setNovaPoshtaType] = useState(initialOrder?.novaPoshtaType ?? "Відділення");
   const [novaPoshtaBranch, setNovaPoshtaBranch] = useState(initialOrder?.novaPoshtaBranch ?? "");
   const [courierAddress, setCourierAddress] = useState(initialOrder?.courierAddress ?? "");
-  const [status, setStatus] = useState(initialOrder?.status ?? "Новый");
+  const [status, setStatus] = useState(initialOrder?.status ?? "Нове");
   const [lines, setLines] = useState<OrderLine[]>(() => buildInitialLines(initialOrder, products));
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -198,9 +198,9 @@ export function AdminOrderCreate({
     setMessage("");
 
     const nextErrors: FieldErrors = {};
-    if (!validatePhone(phone)) nextErrors.phone = "Введите украинский номер в формате +380 XX XXX XX XX.";
-    if (!validateEmail(email)) nextErrors.email = "Введите email в формате name@example.com.";
-    if (preparedItems.length === 0) nextErrors.items = "Добавьте хотя бы один товар в заказ.";
+    if (!validatePhone(phone)) nextErrors.phone = "Введіть український номер у форматі +380 XX XXX XX XX.";
+    if (!validateEmail(email)) nextErrors.email = "Введіть email у форматі name@example.com.";
+    if (preparedItems.length === 0) nextErrors.items = "Додайте хоча б один товар до замовлення.";
 
     if (Object.keys(nextErrors).length > 0) {
       setFieldErrors(nextErrors);
@@ -220,9 +220,9 @@ export function AdminOrderCreate({
       paymentMethod,
       region,
       city,
-      novaPoshtaType: ["Новая почта", "Укрпошта", "Міст Експрес"].includes(deliveryMethod) ? novaPoshtaType : "",
-      novaPoshtaBranch: ["Новая почта", "Укрпошта", "Міст Експрес"].includes(deliveryMethod) ? novaPoshtaBranch : "",
-      courierAddress: deliveryMethod === "Курьер" ? courierAddress : "",
+      novaPoshtaType: ["Нова пошта", "Укрпошта", "Meest"].includes(deliveryMethod) ? novaPoshtaType : "",
+      novaPoshtaBranch: ["Нова пошта", "Укрпошта", "Meest"].includes(deliveryMethod) ? novaPoshtaBranch : "",
+      courierAddress: deliveryMethod === "Кур'єр" ? courierAddress : "",
       items: preparedItems,
       ...(isEditing ? { status } : {})
     };
@@ -237,14 +237,14 @@ export function AdminOrderCreate({
     if (!response.ok) {
       setError(
         (typeof data?.error === "string" ? data.error : null) ??
-          (isEditing ? "Не удалось обновить заказ." : "Не удалось создать заказ.")
+          (isEditing ? "Не вдалося оновити замовлення." : "Не вдалося створити замовлення.")
       );
       setLoading(false);
       return;
     }
 
     if (isEditing) {
-      setMessage("Заказ обновлён.");
+      setMessage("Замовлення оновлено.");
       router.refresh();
     } else {
       const nextId = typeof data?.id === "string" ? data.id : null;
@@ -261,16 +261,16 @@ export function AdminOrderCreate({
     <section className="adminPage">
       <div className="adminHeader">
         <div>
-          <span className="eyebrow">Заказ</span>
-          <h1>{isEditing ? `Редактирование заказа #${initialOrder?.orderNumber}` : "Создать заказ вручную"}</h1>
+          <span className="eyebrow">Замовлення</span>
+          <h1>{isEditing ? `Редагування замовлення #${initialOrder?.orderNumber}` : "Створення замовлення вручну"}</h1>
         </div>
         <LogoutButton />
       </div>
 
       <form className="editorGrid" onSubmit={handleSubmit} noValidate>
         <section className="panel formGrid">
-          <h2>Клиент и доставка</h2>
-          <input value={customerName} onChange={(event) => setCustomerName(event.target.value)} placeholder="Имя клиента" required />
+          <h2>Клієнт і доставка</h2>
+          <input value={customerName} onChange={(event) => setCustomerName(event.target.value)} placeholder="Ім'я клієнта" required />
           <div>
             <input
               value={phone}
@@ -301,9 +301,9 @@ export function AdminOrderCreate({
             {DELIVERY_METHODS.map((method) => <option key={method} value={method}>{method}</option>)}
           </select>
           <select value={paymentMethod} onChange={(event) => setPaymentMethod(event.target.value)}>
-            <option value="Наложенный платеж">Наложенный платеж</option>
-            <option value="Оплата картой">Оплата картой</option>
-            <option value="Безналичный расчет">Безналичный расчет</option>
+            <option value="Післяплата">Післяплата</option>
+            <option value="Оплата карткою">Оплата карткою</option>
+            <option value="Безготівковий розрахунок">Безготівковий розрахунок</option>
           </select>
           {isEditing ? (
             <select value={status} onChange={(event) => setStatus(event.target.value)}>
@@ -311,23 +311,23 @@ export function AdminOrderCreate({
             </select>
           ) : null}
           <input value={region} onChange={(event) => setRegion(event.target.value)} placeholder="Область" />
-          <input value={city} onChange={(event) => setCity(event.target.value)} placeholder="Город" />
-          {["Новая почта", "Укрпошта", "Міст Експрес"].includes(deliveryMethod) ? (
+          <input value={city} onChange={(event) => setCity(event.target.value)} placeholder="Місто" />
+          {["Нова пошта", "Укрпошта", "Meest"].includes(deliveryMethod) ? (
             <>
               <select value={novaPoshtaType} onChange={(event) => setNovaPoshtaType(event.target.value)}>
-                <option value="Отделение">Отделение</option>
-                <option value="Почтомат">Почтомат</option>
+                <option value="Відділення">Відділення</option>
+                <option value="Поштомат">Поштомат</option>
               </select>
-              <input value={novaPoshtaBranch} onChange={(event) => setNovaPoshtaBranch(event.target.value)} placeholder="Отделение / почтомат / точка выдачи" />
+              <input value={novaPoshtaBranch} onChange={(event) => setNovaPoshtaBranch(event.target.value)} placeholder="Відділення / поштомат / точка видачі" />
             </>
           ) : null}
-          {deliveryMethod === "Курьер" ? <input value={courierAddress} onChange={(event) => setCourierAddress(event.target.value)} placeholder="Адрес курьерской доставки" /> : null}
-          <textarea value={comment} onChange={(event) => setComment(event.target.value)} rows={4} placeholder="Комментарий клиента" />
-          <textarea value={managerComment} onChange={(event) => setManagerComment(event.target.value)} rows={4} placeholder="Комментарий менеджера" />
+          {deliveryMethod === "Кур'єр" ? <input value={courierAddress} onChange={(event) => setCourierAddress(event.target.value)} placeholder="Адреса кур'єрської доставки" /> : null}
+          <textarea value={comment} onChange={(event) => setComment(event.target.value)} rows={4} placeholder="Коментар клієнта" />
+          <textarea value={managerComment} onChange={(event) => setManagerComment(event.target.value)} rows={4} placeholder="Коментар менеджера" />
         </section>
 
         <section className="panel formGrid">
-          <h2>Товары в заказе</h2>
+          <h2>Товари в замовленні</h2>
           {lines.map((line, index) => {
             const query = line.search.trim().toLowerCase();
             const selectedProduct = line.productId ? productMap.get(line.productId) : null;
@@ -341,7 +341,7 @@ export function AdminOrderCreate({
                   value={line.search}
                   onChange={(event) => handleSearchChange(index, event.target.value)}
                   type="search"
-                  placeholder="Введите артикул или название товара"
+                  placeholder="Введіть артикул або назву товару"
                 />
                 {suggestions.length > 0 && !selectedProduct ? (
                   <div className="panel formGrid">
@@ -357,22 +357,22 @@ export function AdminOrderCreate({
                   inputMode="numeric"
                   value={String(line.quantity)}
                   onChange={(event) => updateLine(index, { quantity: Math.max(1, Number(event.target.value.replace(/\D/g, "")) || 1) })}
-                  placeholder="Количество"
+                  placeholder="Кількість"
                   disabled={!selectedProduct}
                 />
-                <p>{selectedProduct ? `${selectedProduct.sku} · ${selectedProduct.name}` : "Товар не выбран"}</p>
-                <p>{selectedProduct ? `Позиция: ${(selectedProduct.price * line.quantity).toFixed(2)} грн` : ""}</p>
-                <button type="button" className="button secondary" onClick={() => removeLine(index)}>Удалить позицию</button>
+                <p>{selectedProduct ? `${selectedProduct.sku} · ${selectedProduct.name}` : "Товар не вибрано"}</p>
+                <p>{selectedProduct ? `Позиція: ${(selectedProduct.price * line.quantity).toFixed(2)} грн` : ""}</p>
+                <button type="button" className="button secondary" onClick={() => removeLine(index)}>Видалити позицію</button>
               </div>
             );
           })}
           {fieldErrors.items ? <p className="errorText">{fieldErrors.items}</p> : null}
           <div className="panel">
-            <strong>Итого по заказу: {total.toFixed(2)} грн</strong>
+            <strong>Разом по замовленню: {total.toFixed(2)} грн</strong>
           </div>
           <div className="actions">
-            <button type="button" className="button secondary" onClick={addLine}>Добавить товар</button>
-            <button type="submit" className="button primary" disabled={loading}>{loading ? "Сохраняем..." : isEditing ? "Сохранить заказ" : "Создать заказ"}</button>
+            <button type="button" className="button secondary" onClick={addLine}>Додати товар</button>
+            <button type="submit" className="button primary" disabled={loading}>{loading ? "Зберігаємо..." : isEditing ? "Зберегти замовлення" : "Створити замовлення"}</button>
           </div>
           {error ? <p className="errorText">{error}</p> : null}
           {message ? <p className="successText">{message}</p> : null}

@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import Image from "next/image";
 import { useRouter } from "next/navigation";
@@ -9,20 +9,24 @@ import { parseMultiValue } from "@/lib/multi-value";
 import { DEFAULT_PRODUCT_IMAGE } from "@/lib/product-defaults";
 import { slugify } from "@/lib/slug";
 
+type TranslationMap = {
+  uk: string;
+  ru: string;
+  en: string;
+};
+
 type ProductPayload = {
   name: string;
   code: string;
   group: string;
   variantColor: string;
-  nameI18n: {
-    ru: string;
-    en: string;
-  };
+  nameI18n: TranslationMap;
   slug: string;
   status: string;
   category: string[];
   brand: string;
   size: string;
+  sizes: string[];
   centimeters: string;
   ageGroup: string;
   audience: string;
@@ -35,34 +39,33 @@ type ProductPayload = {
     quantity: number;
   }>;
   material: string;
-  colors: string;
+  materials: string[];
+  colors: string[];
   badge: string | null;
   description: string;
-  descriptionI18n: {
-    ru: string;
-    en: string;
-  };
+  descriptionI18n: TranslationMap;
   image: string;
   images: string[];
   features: string;
 };
 
 type SubmitMode = "save" | "continue";
+type LocaleTab = "uk" | "ru" | "en";
+
+const EMPTY_TRANSLATIONS: TranslationMap = { uk: "", ru: "", en: "" };
 
 const EMPTY_PRODUCT_FORM: ProductPayload = {
   name: "",
   code: "",
   group: "",
   variantColor: "",
-  nameI18n: {
-    ru: "",
-    en: ""
-  },
+  nameI18n: EMPTY_TRANSLATIONS,
   slug: "",
-  status: "Активен",
+  status: "Активний",
   category: [],
   brand: "",
   size: "",
+  sizes: [],
   centimeters: "",
   ageGroup: "",
   audience: "",
@@ -72,13 +75,11 @@ const EMPTY_PRODUCT_FORM: ProductPayload = {
   stock: 0,
   warehouseStock: [],
   material: "",
-  colors: "",
+  materials: [],
+  colors: [],
   badge: "",
   description: "",
-  descriptionI18n: {
-    ru: "",
-    en: ""
-  },
+  descriptionI18n: EMPTY_TRANSLATIONS,
   image: DEFAULT_PRODUCT_IMAGE,
   images: [],
   features: ""
@@ -136,10 +137,70 @@ function MultiSelectField({
           </button>
         ))}
       </div>
-      <small className="helperText">
-        {selected.length > 0 ? `Выбрано: ${selected.join(", ")}` : "Пока ничего не выбрано."}
-      </small>
+      <small className="helperText">{selected.length > 0 ? `Вибрано: ${selected.join(", ")}` : "Поки нічого не вибрано."}</small>
     </Field>
+  );
+}
+
+function TranslationTabs({
+  activeLocale,
+  onChange,
+  title,
+  description,
+  nameValue,
+  namePlaceholder,
+  descriptionValue,
+  descriptionPlaceholder,
+  onNameChange,
+  onDescriptionChange
+}: {
+  activeLocale: LocaleTab;
+  onChange: (locale: LocaleTab) => void;
+  title: string;
+  description: string;
+  nameValue: string;
+  namePlaceholder: string;
+  descriptionValue: string;
+  descriptionPlaceholder: string;
+  onNameChange: (value: string) => void;
+  onDescriptionChange: (value: string) => void;
+}) {
+  const tabs: Array<{ value: LocaleTab; label: string }> = [
+    { value: "uk", label: "UA" },
+    { value: "ru", label: "RU" },
+    { value: "en", label: "EN" }
+  ];
+
+  return (
+    <div className="formField" style={{ gridColumn: "1 / -1" }}>
+      <span>{title}</span>
+      <small className="helperText">{description}</small>
+      <div className="chips adminMultiChips" style={{ marginBottom: 12 }}>
+        {tabs.map((tab) => (
+          <button
+            key={tab.value}
+            type="button"
+            className={`chip ${activeLocale === tab.value ? "active" : ""}`}
+            onClick={() => onChange(tab.value)}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+      <div className="splitGrid">
+        <Field label={`Назва ${activeLocale.toUpperCase()}`}>
+          <input value={nameValue} onChange={(event) => onNameChange(event.target.value)} type="text" placeholder={namePlaceholder} />
+        </Field>
+        <Field label={`Опис ${activeLocale.toUpperCase()}`}>
+          <textarea
+            value={descriptionValue}
+            onChange={(event) => onDescriptionChange(event.target.value)}
+            rows={5}
+            placeholder={descriptionPlaceholder}
+          />
+        </Field>
+      </div>
+    </div>
   );
 }
 
@@ -153,33 +214,21 @@ function uniqueValues(values: string[]) {
 
 function parseNonNegativeNumber(value: string) {
   const normalized = value.replace(",", ".").trim();
-  if (!normalized) {
-    return 0;
-  }
+  if (!normalized) return 0;
   const parsed = Number(normalized);
-  if (!Number.isFinite(parsed)) {
-    return 0;
-  }
-  return Math.max(0, parsed);
+  return Number.isFinite(parsed) ? Math.max(0, parsed) : 0;
 }
 
 function parseNullableNonNegativeNumber(value: string) {
   const normalized = value.replace(",", ".").trim();
-  if (!normalized) {
-    return null;
-  }
+  if (!normalized) return null;
   const parsed = Number(normalized);
-  if (!Number.isFinite(parsed)) {
-    return null;
-  }
-  return Math.max(0, parsed);
+  return Number.isFinite(parsed) ? Math.max(0, parsed) : null;
 }
 
 async function parseResponseJson(response: Response) {
   const text = await response.text();
-  if (!text) {
-    return null;
-  }
+  if (!text) return null;
 
   try {
     return JSON.parse(text) as { error?: string } | null;
@@ -194,7 +243,10 @@ export function AdminProductFormV5({
   brands,
   seasons,
   warehouses,
-  groups
+  groups,
+  colors,
+  sizes,
+  materials
 }: {
   product: AdminProduct | null;
   categories: string[];
@@ -202,18 +254,19 @@ export function AdminProductFormV5({
   seasons: string[];
   warehouses: string[];
   groups: string[];
+  colors: string[];
+  sizes: string[];
+  materials: string[];
 }) {
   const router = useRouter();
   const initialGeneratedSlug = product?.name ? slugify(product.name) : "";
   const [newCategory, setNewCategory] = useState("");
   const [newBrand, setNewBrand] = useState("");
   const [newSeason, setNewSeason] = useState("");
-  const [availableWarehouses, setAvailableWarehouses] = useState(warehouses);
+  const [availableWarehouses] = useState(warehouses);
   const [availableGroups] = useState(groups);
   const [warehouseToAdd, setWarehouseToAdd] = useState("");
-  const [transferFrom, setTransferFrom] = useState("");
-  const [transferTo, setTransferTo] = useState("");
-  const [transferQuantity, setTransferQuantity] = useState("");
+  const [activeLocale, setActiveLocale] = useState<LocaleTab>("uk");
   const [isSlugManual, setIsSlugManual] = useState(Boolean(product?.slug && product.slug !== initialGeneratedSlug));
   const [form, setForm] = useState<ProductPayload>({
     name: product?.name ?? "",
@@ -221,14 +274,16 @@ export function AdminProductFormV5({
     group: product?.group ?? "",
     variantColor: product?.variantColor ?? "",
     nameI18n: {
+      uk: product?.nameI18n?.uk ?? "",
       ru: product?.nameI18n?.ru ?? "",
       en: product?.nameI18n?.en ?? ""
     },
     slug: product?.slug ?? "",
-    status: product?.status ?? "Активен",
+    status: product?.status ?? "Активний",
     category: parseMultiValue(product?.category),
     brand: product?.brand ?? "",
     size: product?.size ?? "",
+    sizes: product?.sizes ?? parseMultiValue(product?.size),
     centimeters: product?.centimeters ?? "",
     ageGroup: product?.ageGroup ?? "",
     audience: product?.audience ?? "",
@@ -238,16 +293,15 @@ export function AdminProductFormV5({
     stock: product?.stock ?? 0,
     warehouseStock:
       product?.warehouseStock
-        ?.map((entry) => ({
-          warehouse: entry.warehouse,
-          quantity: Math.max(0, Math.trunc(entry.quantity))
-        }))
+        ?.map((entry) => ({ warehouse: entry.warehouse, quantity: Math.max(0, Math.trunc(entry.quantity)) }))
         .filter((entry) => entry.warehouse.trim().length > 0) ?? [],
     material: product?.material ?? "",
-    colors: product?.colors.join("\n") ?? "",
+    materials: product?.materials ?? (product?.material ? product.material.split(",").map((item) => item.trim()).filter(Boolean) : []),
+    colors: product?.colors ?? [],
     badge: product?.badge ?? "",
     description: product?.description ?? "",
     descriptionI18n: {
+      uk: product?.descriptionI18n?.uk ?? "",
       ru: product?.descriptionI18n?.ru ?? "",
       en: product?.descriptionI18n?.en ?? ""
     },
@@ -267,141 +321,43 @@ export function AdminProductFormV5({
     setNewBrand("");
     setNewSeason("");
     setWarehouseToAdd("");
-    setTransferFrom("");
-    setTransferTo("");
-    setTransferQuantity("");
     setIsSlugManual(false);
+    setActiveLocale("uk");
   }
 
-  function normalizeWarehouseStock(
-    entries: Array<{
-      warehouse: string;
-      quantity: number;
-    }>,
-    options?: { keepZero?: boolean }
-  ) {
+  function normalizeWarehouseStock(entries: Array<{ warehouse: string; quantity: number }>) {
     const grouped = new Map<string, number>();
     for (const entry of entries) {
       const warehouse = entry.warehouse.trim();
       const quantity = Math.max(0, Math.trunc(entry.quantity));
-
-      if (!warehouse) {
-        continue;
-      }
-
+      if (!warehouse) continue;
       grouped.set(warehouse, (grouped.get(warehouse) ?? 0) + quantity);
     }
-
-    return Array.from(grouped.entries())
-      .map(([warehouse, quantity]) => ({ warehouse, quantity }))
-      .filter((entry) => (options?.keepZero ? entry.quantity >= 0 : entry.quantity > 0));
+    return Array.from(grouped.entries()).map(([warehouse, quantity]) => ({ warehouse, quantity }));
   }
 
-  function syncWarehouseStock(
-    updater: (
-      current: Array<{
-        warehouse: string;
-        quantity: number;
-      }>
-    ) => Array<{
-      warehouse: string;
-      quantity: number;
-    }>
-  ) {
+  function syncWarehouseStock(entries: Array<{ warehouse: string; quantity: number }>) {
+    const warehouseStock = normalizeWarehouseStock(entries);
+    setForm((current) => ({
+      ...current,
+      warehouseStock,
+      stock: warehouseStock.reduce((sum, entry) => sum + entry.quantity, 0)
+    }));
+  }
+
+  function toggleSelection(field: "category" | "season" | "colors" | "sizes" | "materials", value: string) {
     setForm((current) => {
-      const warehouseStock = normalizeWarehouseStock(updater(current.warehouseStock), { keepZero: true });
+      const next = current[field].includes(value)
+        ? current[field].filter((item) => item !== value)
+        : [...current[field], value];
+
       return {
         ...current,
-        warehouseStock,
-        stock: warehouseStock.reduce((sum, entry) => sum + entry.quantity, 0)
+        [field]: next,
+        ...(field === "sizes" ? { size: next.join(" | ") } : null),
+        ...(field === "materials" ? { material: next.join(", ") } : null)
       };
     });
-  }
-
-  function ensureWarehouseExists(name: string) {
-    const normalized = name.trim();
-    if (!normalized) {
-      return;
-    }
-
-    setAvailableWarehouses((current) =>
-      current.some((item) => item.toLowerCase() === normalized.toLowerCase()) ? current : [...current, normalized]
-    );
-  }
-
-  function addWarehouseToProduct(name: string) {
-    const normalized = name.trim();
-    if (!normalized) {
-      return;
-    }
-
-    ensureWarehouseExists(normalized);
-    syncWarehouseStock((current) =>
-      current.some((entry) => entry.warehouse === normalized)
-        ? current
-        : [...current, { warehouse: normalized, quantity: 0 }]
-    );
-  }
-
-  function updateWarehouseQuantity(name: string, quantity: number) {
-    syncWarehouseStock((current) =>
-      current.map((entry) =>
-        entry.warehouse === name
-          ? {
-              ...entry,
-              quantity: Math.max(0, Math.trunc(quantity))
-            }
-          : entry
-      )
-    );
-  }
-
-  function removeWarehouseFromProduct(name: string) {
-    syncWarehouseStock((current) => current.filter((entry) => entry.warehouse !== name));
-  }
-
-  function handleAddExistingWarehouse() {
-    if (!warehouseToAdd) {
-      return;
-    }
-
-    addWarehouseToProduct(warehouseToAdd);
-    setWarehouseToAdd("");
-  }
-
-  function handleTransferStock() {
-    const quantity = Math.max(0, Math.trunc(parseNonNegativeNumber(transferQuantity)));
-    if (!transferFrom || !transferTo || transferFrom === transferTo || quantity <= 0) {
-      return;
-    }
-
-    const sourceEntry = form.warehouseStock.find((entry) => entry.warehouse === transferFrom);
-    if (!sourceEntry || sourceEntry.quantity < quantity) {
-      setError("На складе-источнике недостаточно товара для перемещения.");
-      return;
-    }
-
-    ensureWarehouseExists(transferTo);
-    syncWarehouseStock((current) => {
-      const next = current.map((entry) => ({ ...entry }));
-      const source = next.find((entry) => entry.warehouse === transferFrom);
-      const target = next.find((entry) => entry.warehouse === transferTo);
-
-      if (source) {
-        source.quantity = Math.max(0, source.quantity - quantity);
-      }
-
-      if (target) {
-        target.quantity += quantity;
-      } else {
-        next.push({ warehouse: transferTo, quantity });
-      }
-
-      return next;
-    });
-
-    setTransferQuantity("");
-    setMessage(`Перемещено ${quantity} шт. со склада "${transferFrom}" на склад "${transferTo}".`);
   }
 
   function handleNameChange(name: string) {
@@ -411,6 +367,16 @@ export function AdminProductFormV5({
   function handleSlugChange(slug: string) {
     setIsSlugManual(true);
     setForm((current) => ({ ...current, slug: slugify(slug) }));
+  }
+
+  function updateTranslation(field: "nameI18n" | "descriptionI18n", locale: LocaleTab, value: string) {
+    setForm((current) => ({
+      ...current,
+      [field]: {
+        ...current[field],
+        [locale]: value
+      }
+    }));
   }
 
   function setGallery(images: string[]) {
@@ -424,15 +390,6 @@ export function AdminProductFormV5({
 
   function setPrimaryImage(image: string) {
     setForm((current) => ({ ...current, image, images: uniqueImages([image, ...current.images]) }));
-  }
-
-  function toggleSelection(field: "category" | "season", value: string) {
-    setForm((current) => ({
-      ...current,
-      [field]: current[field].includes(value)
-        ? current[field].filter((item) => item !== value)
-        : [...current[field], value]
-    }));
   }
 
   async function handleImageUpload(event: ChangeEvent<HTMLInputElement>) {
@@ -451,18 +408,26 @@ export function AdminProductFormV5({
         const response = await fetch("/api/upload", { method: "POST", body: formData });
         const data = await response.json();
         if (!response.ok) {
-          setError(data.error ?? "Не удалось загрузить изображение.");
+          setError(data.error ?? "Не вдалося завантажити зображення.");
           return;
         }
         uploadedUrls.push(data.url);
       }
 
       setForm((current) => {
-        const gallery = uniqueImages([...uploadedUrls, ...current.images, ...(current.image && current.image !== DEFAULT_PRODUCT_IMAGE ? [current.image] : [])]);
+        const gallery = uniqueImages([
+          ...uploadedUrls,
+          ...current.images,
+          ...(current.image && current.image !== DEFAULT_PRODUCT_IMAGE ? [current.image] : [])
+        ]);
         return { ...current, image: gallery[0] ?? DEFAULT_PRODUCT_IMAGE, images: gallery };
       });
 
-      setMessage(uploadedUrls.length === 1 ? "Изображение загружено и добавлено в галерею." : `Загружено ${uploadedUrls.length} изображений и добавлено в галерею.`);
+      setMessage(
+        uploadedUrls.length === 1
+          ? "Зображення завантажено та додано до галереї."
+          : `Завантажено ${uploadedUrls.length} зображень і додано до галереї.`
+      );
     } finally {
       setUploading(false);
       event.target.value = "";
@@ -479,15 +444,18 @@ export function AdminProductFormV5({
     const resolvedBrand = newBrand.trim() || form.brand;
     const resolvedSeasons = uniqueValues([...form.season, newSeason]);
     const resolvedWarehouseStock = normalizeWarehouseStock(form.warehouseStock);
+    const resolvedSizes = uniqueValues(form.sizes);
+    const resolvedMaterials = uniqueValues(form.materials);
+    const resolvedColors = uniqueValues(form.colors);
 
     if (resolvedCategories.length === 0) {
-      setError("Выберите хотя бы одну категорию или добавьте новую.");
+      setError("Виберіть хоча б одну категорію або додайте нову.");
       setLoading(false);
       return;
     }
 
     if (!resolvedBrand) {
-      setError("Выберите бренд или создайте новый.");
+      setError("Виберіть бренд або створіть новий.");
       setLoading(false);
       return;
     }
@@ -502,16 +470,15 @@ export function AdminProductFormV5({
       category: resolvedCategories,
       brand: resolvedBrand,
       season: resolvedSeasons,
-      nameI18n: {
-        ru: form.nameI18n.ru.trim(),
-        en: form.nameI18n.en.trim()
-      },
+      sizes: resolvedSizes,
+      size: resolvedSizes.join(" | "),
+      materials: resolvedMaterials,
+      material: resolvedMaterials.join(", "),
+      colors: resolvedColors,
+      nameI18n: Object.fromEntries(Object.entries(form.nameI18n).map(([key, value]) => [key, value.trim()])),
       oldPrice: form.oldPrice || null,
       badge: form.badge || null,
-      descriptionI18n: {
-        ru: form.descriptionI18n.ru.trim(),
-        en: form.descriptionI18n.en.trim()
-      },
+      descriptionI18n: Object.fromEntries(Object.entries(form.descriptionI18n).map(([key, value]) => [key, value.trim()])),
       features: form.features
     };
 
@@ -525,19 +492,19 @@ export function AdminProductFormV5({
     const data = await parseResponseJson(response);
 
     if (!response.ok) {
-      setError(data?.error ?? "Не удалось сохранить товар.");
+      setError(data?.error ?? "Не вдалося зберегти товар.");
       setLoading(false);
       return;
     }
 
     if (product) {
-      setMessage("Товар обновлён.");
+      setMessage("Товар оновлено.");
     } else if (submitMode === "continue") {
       resetCreateForm();
-      setMessage("Товар создан. Можно сразу добавить следующий.");
+      setMessage("Товар створено. Можна одразу додати наступний.");
     } else {
       resetCreateForm();
-      setMessage("Товар создан.");
+      setMessage("Товар створено.");
     }
 
     router.refresh();
@@ -548,37 +515,26 @@ export function AdminProductFormV5({
     <section className="adminPage">
       <div className="adminHeader">
         <div>
-          <span className="eyebrow">Продукт</span>
-          <h1>Страница создания и редактирования позиции</h1>
+          <span className="eyebrow">Товар</span>
+          <h1>Створення та редагування товару</h1>
         </div>
         <LogoutButton />
       </div>
 
-      <form className="editorGrid" onSubmit={handleSubmit}>
-        <Section title="Основное" description="Базовая информация о товаре, которую увидит клиент.">
-          <Field label="Название товара" hint="Название в каталоге и карточке товара.">
-            <input value={form.name} onChange={(event) => handleNameChange(event.target.value)} type="text" placeholder="Например: Кроссовки Run Air" required />
+      <form className="editorGrid compactAdminCard" onSubmit={handleSubmit}>
+        <Section title="Основне" description="Базова інформація про товар, яку побачить клієнт.">
+          <Field label="Назва товару" hint="Основна назва за замовчуванням.">
+            <input value={form.name} onChange={(event) => handleNameChange(event.target.value)} type="text" required />
           </Field>
 
-          <Field label="Код товара" hint="Внутренний код для поиска и учета.">
-            <input
-              value={form.code}
-              onChange={(event) => setForm((current) => ({ ...current, code: event.target.value }))}
-              type="text"
-              placeholder="Например: ART-001"
-            />
+          <Field label="Код товару" hint="Внутрішній код для пошуку та обліку.">
+            <input value={form.code} onChange={(event) => setForm((current) => ({ ...current, code: event.target.value }))} type="text" />
           </Field>
 
           <div className="splitGrid">
-            <Field label="Группа товара" hint="Одинаковая группа связывает один товар в разных цветах.">
+            <Field label="Група товару" hint="Пов'язує один товар у різних кольорах.">
               <>
-                <input
-                  value={form.group}
-                  onChange={(event) => setForm((current) => ({ ...current, group: event.target.value }))}
-                  type="text"
-                  placeholder="Например: air-jacket"
-                  list="product-groups"
-                />
+                <input value={form.group} onChange={(event) => setForm((current) => ({ ...current, group: event.target.value }))} type="text" list="product-groups" />
                 <datalist id="product-groups">
                   {availableGroups.map((group) => (
                     <option key={group} value={group} />
@@ -587,163 +543,149 @@ export function AdminProductFormV5({
               </>
             </Field>
 
-            <Field label="Цвет варианта" hint="Какой цвет должен видеть клиент в переключателе вариантов.">
-              <input
-                value={form.variantColor}
-                onChange={(event) => setForm((current) => ({ ...current, variantColor: event.target.value }))}
-                type="text"
-                placeholder="Например: Черный"
-              />
+            <Field label="Колір варіанту" hint="Підпис для перемикача варіантів.">
+              <input value={form.variantColor} onChange={(event) => setForm((current) => ({ ...current, variantColor: event.target.value }))} type="text" />
             </Field>
           </div>
 
-          <div className="splitGrid">
-            <Field label="Название RU" hint="Русская версия названия для мультиязычности.">
-              <input
-                value={form.nameI18n.ru}
-                onChange={(event) =>
-                  setForm((current) => ({
-                    ...current,
-                    nameI18n: { ...current.nameI18n, ru: event.target.value }
-                  }))
-                }
-                type="text"
-                placeholder="Название на русском"
-              />
-            </Field>
-
-            <Field label="Название EN" hint="Английская версия названия для мультиязычности.">
-              <input
-                value={form.nameI18n.en}
-                onChange={(event) =>
-                  setForm((current) => ({
-                    ...current,
-                    nameI18n: { ...current.nameI18n, en: event.target.value }
-                  }))
-                }
-                type="text"
-                placeholder="Product title in English"
-              />
-            </Field>
-          </div>
-
-          <Field label="URL товара" hint="Генерируется автоматически, но можно изменить вручную.">
-            <input value={form.slug} onChange={(event) => handleSlugChange(event.target.value)} type="text" placeholder="krossovki-run-air" />
+          <Field label="URL товару" hint="Генерується автоматично, але можна змінити вручну.">
+            <input value={form.slug} onChange={(event) => handleSlugChange(event.target.value)} type="text" />
           </Field>
 
-          <Field label="Описание" hint="Короткое понятное описание товара.">
-            <textarea value={form.description} onChange={(event) => setForm({ ...form, description: event.target.value })} rows={6} placeholder="Опишите товар простыми словами" />
+          <Field label="Опис" hint="Основний текст за замовчуванням.">
+            <textarea value={form.description} onChange={(event) => setForm((current) => ({ ...current, description: event.target.value }))} rows={6} />
           </Field>
 
+          <TranslationTabs
+            activeLocale={activeLocale}
+            onChange={setActiveLocale}
+            title="Переклади"
+            description="Для картки товару доступні окремі вкладки з перекладами UA, RU та EN."
+            nameValue={form.nameI18n[activeLocale]}
+            namePlaceholder="Перекладена назва"
+            descriptionValue={form.descriptionI18n[activeLocale]}
+            descriptionPlaceholder="Перекладений опис"
+            onNameChange={(value) => updateTranslation("nameI18n", activeLocale, value)}
+            onDescriptionChange={(value) => updateTranslation("descriptionI18n", activeLocale, value)}
+          />
+
           <div className="splitGrid">
-            <Field label="Описание RU" hint="Русская версия описания.">
-              <textarea
-                value={form.descriptionI18n.ru}
-                onChange={(event) =>
-                  setForm((current) => ({
-                    ...current,
-                    descriptionI18n: { ...current.descriptionI18n, ru: event.target.value }
-                  }))
-                }
-                rows={5}
-                placeholder="Описание на русском"
-              />
+            <Field label="Ціна">
+              <input value={form.price === 0 ? "" : String(form.price)} onChange={(event) => setForm((current) => ({ ...current, price: parseNonNegativeNumber(event.target.value) }))} type="text" inputMode="decimal" required />
             </Field>
 
-            <Field label="Описание EN" hint="Английская версия описания.">
-              <textarea
-                value={form.descriptionI18n.en}
-                onChange={(event) =>
-                  setForm((current) => ({
-                    ...current,
-                    descriptionI18n: { ...current.descriptionI18n, en: event.target.value }
-                  }))
-                }
-                rows={5}
-                placeholder="Product description in English"
-              />
+            <Field label="Стара ціна">
+              <input value={form.oldPrice ?? ""} onChange={(event) => setForm((current) => ({ ...current, oldPrice: parseNullableNonNegativeNumber(event.target.value) }))} type="text" inputMode="decimal" />
             </Field>
           </div>
 
           <div className="splitGrid">
-            <Field label="Цена" hint="Текущая цена продажи. Можно вводить копейки через точку или запятую.">
-              <input value={form.price === 0 ? "" : String(form.price)} onChange={(event) => setForm({ ...form, price: parseNonNegativeNumber(event.target.value) })} type="text" inputMode="decimal" placeholder="0.00" required />
-            </Field>
-
-            <Field label="Старая цена" hint="Необязательно. Для показа скидки.">
-              <input value={form.oldPrice ?? ""} onChange={(event) => setForm({ ...form, oldPrice: parseNullableNonNegativeNumber(event.target.value) })} type="text" inputMode="decimal" placeholder="0.00" />
-            </Field>
-          </div>
-
-          <div className="splitGrid">
-            <Field label="Статус" hint="Управляет видимостью и состоянием товара в админке.">
-              <select value={form.status} onChange={(event) => setForm({ ...form, status: event.target.value })}>
-                <option value="Активен">Активен</option>
-                <option value="Черновик">Черновик</option>
-                <option value="Нет в наличии">Нет в наличии</option>
+            <Field label="Статус">
+              <select value={form.status} onChange={(event) => setForm((current) => ({ ...current, status: event.target.value }))}>
+                <option value="Активний">Активний</option>
+                <option value="Чернетка">Чернетка</option>
+                <option value="Немає в наявності">Немає в наявності</option>
                 <option value="Брак">Брак</option>
               </select>
             </Field>
 
-            <Field label="Общий остаток" hint="Считается автоматически как сумма по всем складам.">
-              <input value={String(form.stock)} type="text" inputMode="numeric" />
+            <Field label="Загальний залишок" hint="Рахується автоматично як сума по складах.">
+              <input value={String(form.stock)} type="text" readOnly />
             </Field>
           </div>
 
           <MultiSelectField
-            label="Категории"
-            hint="Можно выбрать сразу несколько категорий для одного товара."
+            label="Категорії"
+            hint="Можна вибрати одразу кілька категорій."
             values={categories}
             selected={form.category}
             onToggle={(value) => toggleSelection("category", value)}
-            emptyLabel="Сначала добавьте категории в справочник."
+            emptyLabel="Спочатку додайте категорії в довідник."
           />
 
-          <Field label="Новая категория" hint="Если нужной категории нет, добавьте её здесь. Она сразу привяжется к товару.">
-            <input value={newCategory} onChange={(event) => setNewCategory(event.target.value)} type="text" placeholder="Например: Детская обувь" />
+          <Field label="Нова категорія">
+            <input value={newCategory} onChange={(event) => setNewCategory(event.target.value)} type="text" />
           </Field>
 
-          <Field label="Бренд" hint="Выберите бренд из общего списка.">
-            <select value={form.brand} onChange={(event) => setForm({ ...form, brand: event.target.value })}>
-              <option value="">Выберите бренд</option>
-              {brands.map((brand) => <option key={brand} value={brand}>{brand}</option>)}
+          <Field label="Бренд">
+            <select value={form.brand} onChange={(event) => setForm((current) => ({ ...current, brand: event.target.value }))}>
+              <option value="">Виберіть бренд</option>
+              {brands.map((brand) => (
+                <option key={brand} value={brand}>
+                  {brand}
+                </option>
+              ))}
             </select>
           </Field>
 
-          <Field label="Новый бренд" hint="Если бренда нет в списке, добавьте его здесь.">
-            <input value={newBrand} onChange={(event) => setNewBrand(event.target.value)} type="text" placeholder="Например: Nike" />
+          <Field label="Новий бренд">
+            <input value={newBrand} onChange={(event) => setNewBrand(event.target.value)} type="text" />
           </Field>
         </Section>
 
-        <Section title="Характеристики" description="Параметры товара для фильтров, карточки и каталога.">
-          <Field label="Размер" hint="Размер, диапазон размеров или размерная сетка."><input value={form.size} onChange={(event) => setForm({ ...form, size: event.target.value })} type="text" placeholder="Например: S, M, L или 38-42" /></Field>
-          <Field label="Сантиметры" hint="Физические размеры товара, если это важно."><input value={form.centimeters} onChange={(event) => setForm({ ...form, centimeters: event.target.value })} type="text" placeholder="Например: 25 x 12 см" /></Field>
-          <Field label="Возраст" hint="Возрастная группа или ограничение по возрасту."><input value={form.ageGroup} onChange={(event) => setForm({ ...form, ageGroup: event.target.value })} type="text" placeholder="Например: 6+" /></Field>
-          <Field label="Для кого подходит" hint="Например: для женщин, мужчин, детей, унисекс."><input value={form.audience} onChange={(event) => setForm({ ...form, audience: event.target.value })} type="text" placeholder="Например: Для женщин" /></Field>
+        <Section title="Характеристики" description="Параметри товару для фільтрів, картки й каталогу.">
+          <MultiSelectField
+            label="Розміри"
+            hint="Розміри вибираються з окремого довідника."
+            values={sizes}
+            selected={form.sizes}
+            onToggle={(value) => toggleSelection("sizes", value)}
+            emptyLabel="Спочатку додайте розміри в довідник."
+          />
+          <MultiSelectField
+            label="Матеріали"
+            hint="Матеріали вибираються із загального довідника."
+            values={materials}
+            selected={form.materials}
+            onToggle={(value) => toggleSelection("materials", value)}
+            emptyLabel="Спочатку додайте матеріали в довідник."
+          />
+          <MultiSelectField
+            label="Кольори"
+            hint="Кольори вибираються множинно із загального довідника."
+            values={colors}
+            selected={form.colors}
+            onToggle={(value) => toggleSelection("colors", value)}
+            emptyLabel="Спочатку додайте кольори в довідник."
+          />
+
+          <Field label="Сантиметри">
+            <input value={form.centimeters} onChange={(event) => setForm((current) => ({ ...current, centimeters: event.target.value }))} type="text" />
+          </Field>
+          <Field label="Вікова група">
+            <input value={form.ageGroup} onChange={(event) => setForm((current) => ({ ...current, ageGroup: event.target.value }))} type="text" />
+          </Field>
+          <Field label="Для кого">
+            <input value={form.audience} onChange={(event) => setForm((current) => ({ ...current, audience: event.target.value }))} type="text" />
+          </Field>
 
           <MultiSelectField
-            label="Сезоны"
-            hint="Можно выбрать несколько сезонов для одного товара."
+            label="Сезони"
+            hint="Можна вибрати кілька сезонів для одного товару."
             values={seasons}
             selected={form.season}
             onToggle={(value) => toggleSelection("season", value)}
-            emptyLabel="Сначала добавьте сезоны в справочник."
+            emptyLabel="Спочатку додайте сезони в довідник."
           />
 
-          <Field label="Новый сезон" hint="Если нужного сезона нет, добавьте его здесь.">
-            <input value={newSeason} onChange={(event) => setNewSeason(event.target.value)} type="text" placeholder="Например: Осень" />
+          <Field label="Новий сезон">
+            <input value={newSeason} onChange={(event) => setNewSeason(event.target.value)} type="text" />
           </Field>
-          <Field label="Материал" hint="Основной материал товара. Необязательно."><input value={form.material} onChange={(event) => setForm({ ...form, material: event.target.value })} type="text" placeholder="Например: Натуральная кожа" /></Field>
-          <Field label="Цвета" hint="Каждый цвет указывайте с новой строки."><textarea value={form.colors} onChange={(event) => setForm({ ...form, colors: event.target.value })} rows={4} placeholder={"Белый\nЧёрный\nКрасный"} /></Field>
-          <Field label="Бейдж" hint="Короткая метка на карточке товара: Новинка, Хит, Sale и т.д."><input value={form.badge ?? ""} onChange={(event) => setForm({ ...form, badge: event.target.value })} type="text" placeholder="Например: Новинка" /></Field>
-          <Field label="Характеристики" hint="Каждую характеристику указывайте с новой строки."><textarea value={form.features} onChange={(event) => setForm({ ...form, features: event.target.value })} rows={8} placeholder={"Лёгкий вес\nДышащий материал\nГарантия 12 месяцев"} /></Field>
+
+          <Field label="Бейдж">
+            <input value={form.badge ?? ""} onChange={(event) => setForm((current) => ({ ...current, badge: event.target.value }))} type="text" />
+          </Field>
+
+          <Field label="Характеристики" hint="Кожну характеристику вказуйте з нового рядка.">
+            <textarea value={form.features} onChange={(event) => setForm((current) => ({ ...current, features: event.target.value }))} rows={8} />
+          </Field>
         </Section>
 
-        <Section title="Склады" description="Распределяйте остаток товара по складам и переносите его между ними.">
-          <Field label="Добавить склад" hint="Можно выбрать только существующий склад из справочника.">
+        <Section title="Склади" description="Виберіть склади розміщення товару та задайте кількість по кожному.">
+          <Field label="Додати склад" hint="Можна вибрати лише існуючий склад із довідника.">
             <div className="actions">
               <select value={warehouseToAdd} onChange={(event) => setWarehouseToAdd(event.target.value)}>
-                <option value="">Выберите склад</option>
+                <option value="">Виберіть склад</option>
                 {availableWarehouses
                   .filter((warehouse) => !form.warehouseStock.some((entry) => entry.warehouse === warehouse))
                   .map((warehouse) => (
@@ -752,8 +694,16 @@ export function AdminProductFormV5({
                     </option>
                   ))}
               </select>
-              <button type="button" className="button secondary" onClick={handleAddExistingWarehouse}>
-                Добавить
+              <button
+                type="button"
+                className="button secondary"
+                onClick={() => {
+                  if (!warehouseToAdd) return;
+                  syncWarehouseStock([...form.warehouseStock, { warehouse: warehouseToAdd, quantity: 0 }]);
+                  setWarehouseToAdd("");
+                }}
+              >
+                Додати
               </button>
             </div>
           </Field>
@@ -763,7 +713,7 @@ export function AdminProductFormV5({
               <thead>
                 <tr>
                   <th>Склад</th>
-                  <th>Количество</th>
+                  <th>Кількість</th>
                   <th />
                 </tr>
               </thead>
@@ -774,82 +724,49 @@ export function AdminProductFormV5({
                     <td>
                       <input
                         value={String(entry.quantity)}
-                        onChange={(event) => updateWarehouseQuantity(entry.warehouse, parseNonNegativeNumber(event.target.value))}
+                        onChange={(event) =>
+                          syncWarehouseStock(
+                            form.warehouseStock.map((item) =>
+                              item.warehouse === entry.warehouse
+                                ? { ...item, quantity: Math.max(0, Math.trunc(parseNonNegativeNumber(event.target.value))) }
+                                : item
+                            )
+                          )
+                        }
                         type="text"
                         inputMode="numeric"
-                        placeholder="0"
                       />
                     </td>
                     <td>
-                      <button type="button" className="button secondary" onClick={() => removeWarehouseFromProduct(entry.warehouse)}>
-                        Убрать
+                      <button type="button" className="button secondary" onClick={() => syncWarehouseStock(form.warehouseStock.filter((item) => item.warehouse !== entry.warehouse))}>
+                        Прибрати
                       </button>
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
-            {form.warehouseStock.length === 0 ? <p>У товара пока нет складов. Добавьте хотя бы один склад.</p> : null}
-          </div>
-
-          <div className="splitGrid">
-            <Field label="Переместить со склада" hint="Склад-источник для перемещения товара.">
-              <select value={transferFrom} onChange={(event) => setTransferFrom(event.target.value)}>
-                <option value="">Выберите склад</option>
-                {form.warehouseStock
-                  .filter((entry) => entry.quantity > 0)
-                  .map((entry) => (
-                    <option key={entry.warehouse} value={entry.warehouse}>
-                      {entry.warehouse} ({entry.quantity})
-                    </option>
-                  ))}
-              </select>
-            </Field>
-
-            <Field label="Переместить на склад" hint="Склад-получатель. Можно выбрать любой подключенный склад.">
-              <select value={transferTo} onChange={(event) => setTransferTo(event.target.value)}>
-                <option value="">Выберите склад</option>
-                {availableWarehouses.map((warehouse) => (
-                  <option key={warehouse} value={warehouse}>
-                    {warehouse}
-                  </option>
-                ))}
-              </select>
-            </Field>
-          </div>
-
-          <div className="splitGrid">
-            <Field label="Количество для перемещения" hint="Сколько единиц нужно перенести между складами.">
-              <input value={transferQuantity} onChange={(event) => setTransferQuantity(event.target.value)} type="text" inputMode="numeric" placeholder="0" />
-            </Field>
-
-            <Field label="Действие" hint="Перенос пересчитает остатки по обоим складам автоматически.">
-              <button type="button" className="button secondary" onClick={handleTransferStock}>
-                Переместить товар
-              </button>
-            </Field>
+            {form.warehouseStock.length === 0 ? <p>У товару поки немає складів. Додайте хоча б один склад.</p> : null}
           </div>
         </Section>
 
-        <Section title="Изображение" description="Загрузите несколько фото товара или вставьте ссылки вручную.">
-          <Field label="Фото товара" hint="Можно выбрать сразу несколько изображений. Они автоматически попадут в галерею товара.">
+        <Section title="Зображення" description="Завантажте кілька фото товару або вставте посилання вручну.">
+          <Field label="Фото товару">
             <input type="file" accept="image/png,image/jpeg,image/webp,image/gif" multiple onChange={handleImageUpload} />
           </Field>
 
-          <Field label="Основное изображение" hint="Используется в карточках товара и первым показывается в галерее.">
-            <input value={form.image} onChange={(event) => setPrimaryImage(event.target.value)} type="text" placeholder="https://example.com/image.jpg или /uploads/file.jpg" />
+          <Field label="Основне зображення">
+            <input value={form.image} onChange={(event) => setPrimaryImage(event.target.value)} type="text" />
           </Field>
 
-          <Field label="Галерея товара" hint="Каждое изображение с новой строки. Можно использовать и загруженные файлы, и внешние ссылки.">
-            <textarea value={form.images.join("\n")} onChange={(event) => setGallery(event.target.value.split("\n").map((item) => item.trim()).filter(Boolean))} rows={6} placeholder={"/uploads/product-1.jpg\n/uploads/product-2.jpg"} />
+          <Field label="Галерея товару">
+            <textarea value={form.images.join("\n")} onChange={(event) => setGallery(event.target.value.split("\n"))} rows={6} />
           </Field>
-
-          <p className="helperText">В форме оставлены только миниатюры галереи. Нажмите на нужную, чтобы сделать её основной.</p>
 
           {form.images.length > 0 ? (
             <div className="productGalleryThumbs adminGalleryThumbs">
               {form.images.map((image, index) => (
-                <button key={`${image}-${index}`} type="button" className={`galleryThumbButton${image === form.image ? " active" : ""}`} onClick={() => setPrimaryImage(image)} aria-label={`Сделать основным изображение ${index + 1}`}>
+                <button key={`${image}-${index}`} type="button" className={`galleryThumbButton${image === form.image ? " active" : ""}`} onClick={() => setPrimaryImage(image)} aria-label={`Зробити основним зображення ${index + 1}`}>
                   <Image src={image} alt={`Галерея ${index + 1}`} width={120} height={120} className="galleryThumb" />
                 </button>
               ))}
@@ -861,11 +778,11 @@ export function AdminProductFormV5({
 
           <div className="actions">
             <button type="submit" className="button primary" disabled={loading || uploading} onClick={() => setSubmitMode("save")}>
-              {loading && submitMode === "save" ? "Сохраняем..." : product ? "Сохранить изменения" : "Сохранить"}
+              {loading && submitMode === "save" ? "Зберігаємо..." : product ? "Зберегти зміни" : "Зберегти"}
             </button>
             {!product ? (
               <button type="submit" className="button secondary" disabled={loading || uploading} onClick={() => setSubmitMode("continue")}>
-                {loading && submitMode === "continue" ? "Сохраняем..." : "Сохранить и продолжить"}
+                {loading && submitMode === "continue" ? "Зберігаємо..." : "Зберегти і продовжити"}
               </button>
             ) : null}
           </div>
@@ -874,4 +791,3 @@ export function AdminProductFormV5({
     </section>
   );
 }
-

@@ -14,17 +14,17 @@ export function AdminClientsClient({ clients }: { clients: DbClient[] }) {
     <section className="adminPage">
       <div className="adminHeader">
         <div>
-          <span className="eyebrow">Клиенты</span>
-          <h1>База клиентов магазина</h1>
+          <span className="eyebrow">Клієнти</span>
+          <h1>База клієнтів магазину</h1>
         </div>
         <div className="actions">
-          <a href={exportUi.allHref} className="button secondary">Excel: все</a>
+          <a href={exportUi.allHref} className="button secondary">Excel: усі</a>
           <a
             href={exportUi.hasSelection ? exportUi.selectedHref : undefined}
             className="button secondary"
             aria-disabled={!exportUi.hasSelection}
           >
-            Excel: выбранные
+            Excel: вибрані
           </a>
         </div>
       </div>
@@ -32,9 +32,9 @@ export function AdminClientsClient({ clients }: { clients: DbClient[] }) {
       <div className="panel toolbar">
         <label className="checkbox">
           <input type="checkbox" checked={exportUi.allSelected} onChange={() => exportUi.toggleAll()} />
-          <span>Выбрать все</span>
+          <span>Вибрати всі</span>
         </label>
-        {exportUi.hasSelection ? <span>{exportUi.selectedIds.length} выбрано</span> : <span>Можно выбрать отдельных клиентов</span>}
+        {exportUi.hasSelection ? <span>Вибрано: {exportUi.selectedIds.length}</span> : <span>Можна вибрати окремих клієнтів для експорту</span>}
       </div>
 
       <div className="panel tableWrap">
@@ -42,13 +42,13 @@ export function AdminClientsClient({ clients }: { clients: DbClient[] }) {
           <thead>
             <tr>
               <th />
-              <th>Клиент</th>
+              <th>Клієнт</th>
               <th>Телефон</th>
               <th>Email</th>
-              <th>Заказов</th>
-              <th>Номера заказов</th>
-              <th>Потрачено</th>
-              <th>Детали</th>
+              <th>Замовлень</th>
+              <th>Номери замовлень</th>
+              <th>Витрачено</th>
+              <th>Деталі</th>
             </tr>
           </thead>
           <tbody>
@@ -59,7 +59,7 @@ export function AdminClientsClient({ clients }: { clients: DbClient[] }) {
                     type="checkbox"
                     checked={exportUi.selectedIds.includes(client.id)}
                     onChange={() => exportUi.toggleOne(client.id)}
-                    aria-label={`Выбрать клиента ${client.name}`}
+                    aria-label={`Вибрати клієнта ${client.name}`}
                   />
                 </td>
                 <td>{client.name}</td>
@@ -69,13 +69,13 @@ export function AdminClientsClient({ clients }: { clients: DbClient[] }) {
                 <td>{client.orderNumbers.map((number) => `#${number}`).join(", ") || "—"}</td>
                 <td>{client.totalSpent} грн</td>
                 <td>
-                  <Link href={`/admin/clients/${client.id}`}>Открыть</Link>
+                  <Link href={`/admin/clients/${client.id}`}>Відкрити</Link>
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
-        {clients.length === 0 ? <p>Клиентов пока нет.</p> : null}
+        {clients.length === 0 ? <p>Клієнтів поки немає.</p> : null}
       </div>
     </section>
   );

@@ -1,22 +1,23 @@
-import { AdminWarehousesClient } from "@/components/admin-warehouses-client";
-import { requireAdmin } from "@/lib/auth";
+import { AdminAttributeClient } from "@/components/admin-attribute-client";
 import { readDb } from "@/lib/json-db";
 
 export default async function AdminWarehousesPage() {
-  await requireAdmin();
   const db = await readDb();
-  const warehouses = db.warehouses.map((name) => ({
-    name,
-    productCount: db.products.filter((product) => product.warehouseStock.some((entry) => entry.warehouse === name && entry.quantity > 0)).length,
-    units: db.products.reduce(
-      (sum, product) =>
-        sum +
-        product.warehouseStock
-          .filter((entry) => entry.warehouse === name)
-          .reduce((warehouseSum, entry) => warehouseSum + entry.quantity, 0),
-      0
-    )
+  const warehouses = db.warehouses.map((item) => ({
+    name: item.name,
+    nameI18n: item.nameI18n,
+    productCount: db.products.filter((product) =>
+      product.warehouseStock.some((entry) => entry.warehouse === item.name && entry.quantity > 0)
+    ).length
   }));
 
-  return <AdminWarehousesClient initialWarehouses={warehouses} />;
+  return (
+    <AdminAttributeClient
+      title="Склади"
+      heading="Керування складами"
+      createLabel="Новий склад"
+      endpoint="/api/warehouses"
+      initialItems={warehouses}
+    />
+  );
 }

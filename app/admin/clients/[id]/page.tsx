@@ -23,7 +23,7 @@ export default async function AdminClientDetailPage({
     <section className="adminPage">
       <div className="adminHeader">
         <div>
-          <span className="eyebrow">Клиент</span>
+          <span className="eyebrow">Клієнт</span>
           <h1>{client.name}</h1>
         </div>
         <LogoutButton />
@@ -33,22 +33,22 @@ export default async function AdminClientDetailPage({
         <div className="panel formGrid">
           <p><strong>Телефон:</strong> {client.phone}</p>
           <p><strong>Email:</strong> {client.email}</p>
-          <p><strong>Заказов:</strong> {client.orderIds.length}</p>
-          <p><strong>Номера заказов:</strong> {client.orderNumbers.map((number) => `#${number}`).join(", ") || "—"}</p>
-          <p><strong>Потрачено:</strong> {client.totalSpent} грн</p>
-          <p><strong>Создан:</strong> {formatDate(client.createdAt)}</p>
-          <p><strong>Обновлен:</strong> {formatDate(client.updatedAt)}</p>
+          <p><strong>Замовлень:</strong> {client.orderIds.length}</p>
+          <p><strong>Номери замовлень:</strong> {client.orderNumbers.map((number) => `#${number}`).join(", ") || "—"}</p>
+          <p><strong>Витрачено:</strong> {client.totalSpent} грн</p>
+          <p><strong>Створено:</strong> {formatDate(client.createdAt)}</p>
+          <p><strong>Оновлено:</strong> {formatDate(client.updatedAt)}</p>
         </div>
 
         <div className="panel formGrid">
-          <h2>Заказы клиента</h2>
+          <h2>Замовлення клієнта</h2>
           {orders.map((order) => (
             <Link key={order.id} href={`/admin/orders/${order.id}`}>
               #{order.orderNumber} · {order.total} грн · {order.status}
             </Link>
           ))}
           <Link href="/admin/clients" className="button secondary">
-            Назад к клиентам
+            Назад до клієнтів
           </Link>
         </div>
       </div>
@@ -57,7 +57,7 @@ export default async function AdminClientDetailPage({
 }
 
 function formatDate(date: string) {
-  return new Intl.DateTimeFormat("ru-RU", {
+  return new Intl.DateTimeFormat("uk-UA", {
     day: "2-digit",
     month: "long",
     year: "numeric",

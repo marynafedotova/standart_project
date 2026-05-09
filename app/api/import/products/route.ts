@@ -248,21 +248,21 @@ export async function POST(request: Request) {
     }
 
     for (const category of parseMultiValue(nextProduct.category)) {
-      if (!db.categories.includes(category)) {
-        db.categories.push(category);
+      if (!db.categories.some((item) => item.name === category)) {
+        db.categories.push({ name: category });
       }
     }
-    if (nextProduct.brand && !db.brands.includes(nextProduct.brand)) {
-      db.brands.push(nextProduct.brand);
+    if (nextProduct.brand && !db.brands.some((item) => item.name === nextProduct.brand)) {
+      db.brands.push({ name: nextProduct.brand });
     }
     for (const season of parseMultiValue(nextProduct.season)) {
-      if (!db.seasons.includes(season)) {
-        db.seasons.push(season);
+      if (!db.seasons.some((item) => item.name === season)) {
+        db.seasons.push({ name: season });
       }
     }
     for (const warehouse of nextProduct.warehouseStock.map((item) => item.warehouse)) {
-      if (warehouse && !db.warehouses.includes(warehouse)) {
-        db.warehouses.push(warehouse);
+      if (warehouse && !db.warehouses.some((item) => item.name === warehouse)) {
+        db.warehouses.push({ name: warehouse });
       }
     }
   }

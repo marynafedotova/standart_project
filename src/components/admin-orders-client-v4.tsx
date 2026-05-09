@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
@@ -61,18 +61,18 @@ export function AdminOrdersClientV4({ initialOrders }: { initialOrders: DbOrder[
     <section className="adminPage">
       <div className="adminHeader">
         <div>
-          <span className="eyebrow">Заказы</span>
-          <h1>Список всех заказов</h1>
+          <span className="eyebrow">Замовлення</span>
+          <h1>Список усіх замовлень</h1>
         </div>
         <div className="actions">
-          <Link href="/admin/orders/new" className="button primary">Новый заказ</Link>
-          <a href={exportUi.allHref} className="button secondary">Excel: все</a>
+          <Link href="/admin/orders/new" className="button primary">Нове замовлення</Link>
+          <a href={exportUi.allHref} className="button secondary">Excel: усі</a>
           <a
             href={exportUi.hasSelection ? exportUi.selectedHref : undefined}
             className="button secondary"
             aria-disabled={!exportUi.hasSelection}
           >
-            Excel: выбранные
+            Excel: вибрані
           </a>
         </div>
       </div>
@@ -80,16 +80,16 @@ export function AdminOrdersClientV4({ initialOrders }: { initialOrders: DbOrder[
       <div className="panel toolbar">
         <label className="checkbox">
           <input type="checkbox" checked={exportUi.allSelected} onChange={() => exportUi.toggleAll()} />
-          <span>Выбрать все</span>
+          <span>Вибрати всі</span>
         </label>
         <input
           type="search"
           value={search}
           onChange={(event) => setSearch(event.target.value)}
-          placeholder="Поиск по ID, клиенту, телефону, email или товару"
+          placeholder="Пошук за ID, клієнтом, телефоном, email або товаром"
         />
         <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}>
-          <option value="all">Все статусы</option>
+          <option value="all">Усі статуси</option>
           {ORDER_STATUSES.map((status) => (
             <option key={status} value={status}>
               {status}
@@ -103,9 +103,9 @@ export function AdminOrdersClientV4({ initialOrders }: { initialOrders: DbOrder[
           <thead>
             <tr>
               <th />
-              <th>Заказ</th>
-              <th>Клиент</th>
-              <th>Сумма</th>
+              <th>Замовлення</th>
+              <th>Клієнт</th>
+              <th>Сума</th>
               <th>Дата</th>
               <th>Статус</th>
             </tr>
@@ -118,7 +118,7 @@ export function AdminOrdersClientV4({ initialOrders }: { initialOrders: DbOrder[
                     type="checkbox"
                     checked={exportUi.selectedIds.includes(order.id)}
                     onChange={() => exportUi.toggleOne(order.id)}
-                    aria-label={`Выбрать заказ #${order.orderNumber}`}
+                    aria-label={`Вибрати замовлення #${order.orderNumber}`}
                   />
                 </td>
                 <td>
@@ -149,14 +149,14 @@ export function AdminOrdersClientV4({ initialOrders }: { initialOrders: DbOrder[
             ))}
           </tbody>
         </table>
-        {filteredOrders.length === 0 ? <p>Заказов по текущим фильтрам нет.</p> : null}
+        {filteredOrders.length === 0 ? <p>За поточними фільтрами замовлень немає.</p> : null}
       </div>
     </section>
   );
 }
 
 function formatDate(date: string) {
-  return new Intl.DateTimeFormat("ru-RU", {
+  return new Intl.DateTimeFormat("uk-UA", {
     day: "2-digit",
     month: "long",
     year: "numeric",

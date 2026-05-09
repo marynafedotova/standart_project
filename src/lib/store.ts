@@ -47,28 +47,49 @@ export async function getCategories() {
   noStore();
   const { readDb } = await import("@/lib/json-db");
   const db = await readDb();
-  return db.categories;
+  return db.categories.map((item) => item.name);
 }
 
 export async function getBrands() {
   noStore();
   const { readDb } = await import("@/lib/json-db");
   const db = await readDb();
-  return db.brands;
+  return db.brands.map((item) => item.name);
 }
 
 export async function getSeasons() {
   noStore();
   const { readDb } = await import("@/lib/json-db");
   const db = await readDb();
-  return db.seasons;
+  return db.seasons.map((item) => item.name);
 }
 
 export async function getWarehouses() {
   noStore();
   const { readDb } = await import("@/lib/json-db");
   const db = await readDb();
-  return db.warehouses;
+  return db.warehouses.map((item) => item.name);
+}
+
+export async function getColors() {
+  noStore();
+  const { readDb } = await import("@/lib/json-db");
+  const db = await readDb();
+  return db.colors.map((item) => item.name);
+}
+
+export async function getSizes() {
+  noStore();
+  const { readDb } = await import("@/lib/json-db");
+  const db = await readDb();
+  return db.sizes.map((item) => item.name);
+}
+
+export async function getMaterials() {
+  noStore();
+  const { readDb } = await import("@/lib/json-db");
+  const db = await readDb();
+  return db.materials.map((item) => item.name);
 }
 
 export async function getOrdersForAdmin() {
