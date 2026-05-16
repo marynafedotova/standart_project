@@ -3,10 +3,11 @@ import { joinMultiValue } from "@/lib/multi-value";
 import { DEFAULT_PRODUCT_IMAGE } from "@/lib/product-defaults";
 
 const stringList = z.array(z.string().trim().min(1)).min(1);
+const stringArray = z.array(z.string().trim().min(1));
 const optionalText = z.string().trim().optional().default("");
 const multiValueSchema = z.union([stringList, z.string().trim().min(1)]).transform((value) => joinMultiValue(value));
 const optionalMultiValueSchema = z
-  .union([stringList, z.string().trim().optional().default("")])
+  .union([stringArray, z.string().trim().optional().default("")])
   .transform((value) => joinMultiValue(value));
 const imagePathSchema = z
   .string()
@@ -53,7 +54,7 @@ const warehouseStockSchema = z
   );
 
 const productAttributeListSchema = z
-  .union([stringList, z.string().trim().optional().default("")])
+  .union([stringArray, z.string().trim().optional().default("")])
   .transform((value) =>
     Array.isArray(value)
       ? Array.from(new Set(value.map((item) => item.trim()).filter(Boolean)))
@@ -63,6 +64,30 @@ const productAttributeListSchema = z
           .map((item) => item.trim())
           .filter(Boolean)
   );
+
+const productStatusSchema = z
+  .enum([
+    "Активний",
+    "Чернетка",
+    "Немає в наявності",
+    "Брак",
+    "Активен",
+    "Черновик",
+    "Нет в наличии"
+  ])
+  .default("Активний")
+  .transform((value) => {
+    switch (value) {
+      case "Активен":
+        return "Активний";
+      case "Черновик":
+        return "Чернетка";
+      case "Нет в наличии":
+        return "Немає в наявності";
+      default:
+        return value;
+    }
+  });
 
 export const loginSchema = z.object({
   email: z.string().email(),
@@ -75,7 +100,7 @@ export const productSchema = z.object({
   group: optionalText,
   variantColor: optionalText,
   slug: z.string().min(2).default("product"),
-  status: z.enum(["Активен", "Черновик", "Нет в наличии", "Брак"]).default("Активен"),
+  status: productStatusSchema,
   nameI18n: translationMapSchema,
   category: multiValueSchema,
   brand: optionalText,
@@ -90,7 +115,7 @@ export const productSchema = z.object({
   stock: z.coerce.number().int().nonnegative(),
   material: optionalText,
   materials: productAttributeListSchema.optional().default([]),
-  colors: z.union([stringList, z.string().trim().optional().default("")]).transform((value) =>
+  colors: z.union([stringArray, z.string().trim().optional().default("")]).transform((value) =>
     Array.isArray(value)
       ? value
       : value
@@ -104,7 +129,7 @@ export const productSchema = z.object({
   warehouseStock: warehouseStockSchema,
   image: imageValueSchema,
   images: z
-    .union([stringList, z.string().trim().optional().default("")])
+    .union([stringArray, z.string().trim().optional().default("")])
     .transform((value) =>
       Array.isArray(value)
         ? value
@@ -115,7 +140,7 @@ export const productSchema = z.object({
     )
     .optional()
     .default([]),
-  features: z.union([stringList, z.string().trim().optional().default("")]).transform((value) =>
+  features: z.union([stringArray, z.string().trim().optional().default("")]).transform((value) =>
     Array.isArray(value)
       ? value
       : value
