@@ -131,6 +131,26 @@ export type DbClient = {
   updatedAt: string;
 };
 
+export type DbHeroSettings = {
+  badge: string;
+  badgeI18n?: Record<string, string>;
+  title: string;
+  titleI18n?: Record<string, string>;
+  description: string;
+  descriptionI18n?: Record<string, string>;
+  primaryText: string;
+  primaryTextI18n?: Record<string, string>;
+  primaryLink: string;
+  secondaryText: string;
+  secondaryTextI18n?: Record<string, string>;
+  secondaryLink: string;
+  imageSrc: string;
+  imageAlt: string;
+  imageAltI18n?: Record<string, string>;
+  benefits: string[];
+  benefitsI18n?: Record<string, string[]>;
+};
+
 export type Database = {
   adminUsers: DbAdminUser[];
   categories: DbNamedEntity[];
@@ -144,6 +164,20 @@ export type Database = {
   posts: DbPost[];
   orders: DbOrder[];
   clients: DbClient[];
+  heroSettings: DbHeroSettings;
+};
+
+const DEFAULT_HERO_SETTINGS: DbHeroSettings = {
+  badge: "",
+  title: "",
+  description: "",
+  primaryText: "",
+  primaryLink: "/catalog",
+  secondaryText: "",
+  secondaryLink: "/admin/products",
+  imageSrc: "",
+  imageAlt: "",
+  benefits: []
 };
 
 function calculateOrderTotal(items: DbOrderItem[]) {
@@ -243,6 +277,7 @@ type ProductRecord = Awaited<ReturnType<typeof prisma.product.findFirst>>;
 type PostRecord = Awaited<ReturnType<typeof prisma.post.findFirst>>;
 type OrderRecord = Awaited<ReturnType<typeof prisma.order.findFirst>>;
 type ClientRecord = Awaited<ReturnType<typeof prisma.client.findFirst>>;
+type SiteSettingsRecord = Awaited<ReturnType<typeof prisma.siteSettings.findFirst>>;
 
 function buildBrandCodeMap(brands: Awaited<ReturnType<typeof prisma.brand.findMany>>) {
   return new Map(brands.map((brand, index) => [brand.name, String(index + 1).padStart(4, "0")]));
@@ -375,6 +410,46 @@ function mapClient(client: NonNullable<ClientRecord>): DbClient {
   };
 }
 
+function asLocaleArrayMap(value: unknown): Record<string, string[]> | undefined {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return undefined;
+  }
+
+  const normalized = Object.fromEntries(
+    Object.entries(value)
+      .map(([key, item]) => [key, Array.isArray(item) ? item.filter((entry): entry is string => typeof entry === "string" && entry.trim().length > 0) : []])
+      .filter(([, item]) => item.length > 0)
+  );
+
+  return Object.keys(normalized).length > 0 ? normalized : undefined;
+}
+
+function mapHeroSettings(settings: SiteSettingsRecord): DbHeroSettings {
+  if (!settings) {
+    return { ...DEFAULT_HERO_SETTINGS };
+  }
+
+  return {
+    badge: settings.heroBadge || "",
+    badgeI18n: asLocaleMap((settings as { heroBadgeI18n?: unknown }).heroBadgeI18n),
+    title: settings.heroTitle || "",
+    titleI18n: asLocaleMap((settings as { heroTitleI18n?: unknown }).heroTitleI18n),
+    description: settings.heroDescription || "",
+    descriptionI18n: asLocaleMap((settings as { heroDescriptionI18n?: unknown }).heroDescriptionI18n),
+    primaryText: settings.heroPrimaryText || "",
+    primaryTextI18n: asLocaleMap((settings as { heroPrimaryTextI18n?: unknown }).heroPrimaryTextI18n),
+    primaryLink: settings.heroPrimaryLink || "/catalog",
+    secondaryText: settings.heroSecondaryText || "",
+    secondaryTextI18n: asLocaleMap((settings as { heroSecondaryTextI18n?: unknown }).heroSecondaryTextI18n),
+    secondaryLink: settings.heroSecondaryLink || "/admin/products",
+    imageSrc: settings.heroImageSrc || "",
+    imageAlt: settings.heroImageAlt || "",
+    imageAltI18n: asLocaleMap((settings as { heroImageAltI18n?: unknown }).heroImageAltI18n),
+    benefits: asTrimmedUniqueArray(settings.heroBenefits),
+    benefitsI18n: asLocaleArrayMap((settings as { heroBenefitsI18n?: unknown }).heroBenefitsI18n)
+  };
+}
+
 function uniqueImages(images: string[]) {
   return Array.from(new Set(images.map((item) => item.trim()).filter(Boolean)));
 }
@@ -422,7 +497,7 @@ export async function readDb(): Promise<Database> {
     };
   };
 
-  const [adminUsers, categoryRows, brandRows, seasonRows, warehouseRows, colorRows, sizeRows, materialRows, products, posts, orders, clients] = await Promise.all([
+  const [adminUsers, categoryRows, brandRows, seasonRows, warehouseRows, colorRows, sizeRows, materialRows, products, posts, orders, clients, heroSettings] = await Promise.all([
     prisma.adminUser.findMany({ orderBy: { createdAt: "asc" } }),
     prisma.category.findMany({ orderBy: { name: "asc" } }),
     prisma.brand.findMany({ orderBy: { createdAt: "asc" } }),
@@ -434,7 +509,8 @@ export async function readDb(): Promise<Database> {
     prisma.product.findMany({ orderBy: { createdAt: "desc" } }),
     prisma.post.findMany({ orderBy: { createdAt: "desc" } }),
     prisma.order.findMany({ orderBy: { createdAt: "desc" } }),
-    prisma.client.findMany({ orderBy: { updatedAt: "desc" } })
+    prisma.client.findMany({ orderBy: { updatedAt: "desc" } }),
+    prisma.siteSettings.findUnique({ where: { key: "home" } })
   ]);
 
   const brandCodeMap = buildBrandCodeMap(brandRows);
@@ -495,7 +571,8 @@ export async function readDb(): Promise<Database> {
     products: mappedProducts,
     posts: posts.map(mapPost),
     orders: orders.map(mapOrder),
-    clients: clients.map(mapClient)
+    clients: clients.map(mapClient),
+    heroSettings: mapHeroSettings(heroSettings)
   };
 }
 
@@ -776,6 +853,47 @@ export async function writeDb(data: Database) {
       }
     });
   }
+
+  await prisma.siteSettings.upsert({
+    where: { key: "home" },
+    update: {
+      heroBadge: data.heroSettings.badge,
+      heroTitle: data.heroSettings.title,
+      heroDescription: data.heroSettings.description,
+      heroPrimaryText: data.heroSettings.primaryText,
+      heroPrimaryLink: data.heroSettings.primaryLink,
+      heroSecondaryText: data.heroSettings.secondaryText,
+      heroSecondaryLink: data.heroSettings.secondaryLink,
+      heroImageSrc: data.heroSettings.imageSrc,
+      heroImageAlt: data.heroSettings.imageAlt,
+      heroBenefits: data.heroSettings.benefits
+    },
+    create: {
+      key: "home",
+      heroBadge: data.heroSettings.badge,
+      heroTitle: data.heroSettings.title,
+      heroDescription: data.heroSettings.description,
+      heroPrimaryText: data.heroSettings.primaryText,
+      heroPrimaryLink: data.heroSettings.primaryLink,
+      heroSecondaryText: data.heroSettings.secondaryText,
+      heroSecondaryLink: data.heroSettings.secondaryLink,
+      heroImageSrc: data.heroSettings.imageSrc,
+      heroImageAlt: data.heroSettings.imageAlt,
+      heroBenefits: data.heroSettings.benefits
+    }
+  });
+  await prisma.$executeRaw`
+    UPDATE "SiteSettings"
+    SET
+      "heroBadgeI18n" = ${JSON.stringify(data.heroSettings.badgeI18n ?? null)}::jsonb,
+      "heroTitleI18n" = ${JSON.stringify(data.heroSettings.titleI18n ?? null)}::jsonb,
+      "heroDescriptionI18n" = ${JSON.stringify(data.heroSettings.descriptionI18n ?? null)}::jsonb,
+      "heroPrimaryTextI18n" = ${JSON.stringify(data.heroSettings.primaryTextI18n ?? null)}::jsonb,
+      "heroSecondaryTextI18n" = ${JSON.stringify(data.heroSettings.secondaryTextI18n ?? null)}::jsonb,
+      "heroImageAltI18n" = ${JSON.stringify(data.heroSettings.imageAltI18n ?? null)}::jsonb,
+      "heroBenefitsI18n" = ${JSON.stringify(data.heroSettings.benefitsI18n ?? null)}::jsonb
+    WHERE "key" = 'home'
+  `;
 }
 
 export function stampNow() {

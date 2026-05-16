@@ -95,15 +95,25 @@ function Field({ label, hint, children }: { label: string; hint?: string; childr
   );
 }
 
-function Section({ title, description, children }: { title: string; description: string; children: ReactNode }) {
+function Section({
+  title,
+  description,
+  children,
+  defaultOpen = true
+}: {
+  title: string;
+  description: string;
+  children: ReactNode;
+  defaultOpen?: boolean;
+}) {
   return (
-    <section className="panel formGrid">
-      <div className="sectionHeading compact">
+    <details className="panel formGrid adminSectionCollapse" open={defaultOpen}>
+      <summary className="sectionHeading compact adminSectionSummary">
         <span className="eyebrow">{title}</span>
         <p>{description}</p>
-      </div>
-      {children}
-    </section>
+      </summary>
+      <div className="adminSectionBody">{children}</div>
+    </details>
   );
 }
 
@@ -522,7 +532,7 @@ export function AdminProductFormV5({
       </div>
 
       <form className="editorGrid compactAdminCard" onSubmit={handleSubmit}>
-        <Section title="Основне" description="Базова інформація про товар, яку побачить клієнт.">
+        <Section title="Основне" description="Базова інформація про товар, яку побачить клієнт." defaultOpen>
           <Field label="Назва товару" hint="Основна назва за замовчуванням.">
             <input value={form.name} onChange={(event) => handleNameChange(event.target.value)} type="text" required />
           </Field>
@@ -623,7 +633,7 @@ export function AdminProductFormV5({
           </Field>
         </Section>
 
-        <Section title="Характеристики" description="Параметри товару для фільтрів, картки й каталогу.">
+        <Section title="Характеристики" description="Параметри товару для фільтрів, картки й каталогу." defaultOpen={Boolean(product)}>
           <MultiSelectField
             label="Розміри"
             hint="Розміри вибираються з окремого довідника."
@@ -681,7 +691,7 @@ export function AdminProductFormV5({
           </Field>
         </Section>
 
-        <Section title="Склади" description="Виберіть склади розміщення товару та задайте кількість по кожному.">
+        <Section title="Склади" description="Виберіть склади розміщення товару та задайте кількість по кожному." defaultOpen={Boolean(product?.warehouseStock?.length)}>
           <Field label="Додати склад" hint="Можна вибрати лише існуючий склад із довідника.">
             <div className="actions">
               <select value={warehouseToAdd} onChange={(event) => setWarehouseToAdd(event.target.value)}>
@@ -750,7 +760,7 @@ export function AdminProductFormV5({
           </div>
         </Section>
 
-        <Section title="Зображення" description="Завантажте кілька фото товару або вставте посилання вручну.">
+        <Section title="Зображення" description="Завантажте кілька фото товару або вставте посилання вручну." defaultOpen={!product}>
           <Field label="Фото товару">
             <input type="file" accept="image/png,image/jpeg,image/webp,image/gif" multiple onChange={handleImageUpload} />
           </Field>

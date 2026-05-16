@@ -155,3 +155,27 @@ model Client {
   updatedAt    DateTime @updatedAt
 }
 
+model SiteSettings {
+  id               String   @id @default(cuid())
+  key              String   @unique
+  heroBadge        String   @default("")
+  heroTitle        String   @default("")
+  heroDescription  String   @default("")
+  heroPrimaryText  String   @default("")
+  heroPrimaryLink  String   @default("")
+  heroSecondaryText String  @default("")
+  heroSecondaryLink String  @default("")
+  heroImageSrc     String   @default("")
+  heroImageAlt     String   @default("")
+  heroBenefits     Json     @default("[]")
+  heroBadgeI18n    Json?
+  heroTitleI18n    Json?
+  heroDescriptionI18n Json?
+  heroPrimaryTextI18n Json?
+  heroSecondaryTextI18n Json?
+  heroImageAltI18n Json?
+  heroBenefitsI18n Json?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
+

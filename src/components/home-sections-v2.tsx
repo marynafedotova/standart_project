@@ -1,32 +1,37 @@
-﻿import { getTranslations } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
 import { Hero } from "@/components/hero";
 import type { StoreProduct } from "@/components/storefront-db";
 import { CatalogView } from "@/components/storefront-db";
 import { Link } from "@/i18n/navigation";
+import type { DbHeroSettings } from "@/lib/json-db";
 
 export async function HomeSectionsV2({
   featuredProducts,
-  seasons
+  seasons,
+  heroSettings
 }: {
   featuredProducts: StoreProduct[];
   seasons: string[];
+  heroSettings: DbHeroSettings;
 }) {
   const t = await getTranslations("Home");
+  const locale = await getLocale();
   const heroProduct = featuredProducts[0];
+  const localizedBenefits = heroSettings.benefitsI18n?.[locale] ?? heroSettings.benefits;
 
   return (
     <main>
       <Hero
-        badge={t("badge")}
-        title={t("title")}
-        description={t("description")}
-        primaryBtnText={t("primary")}
-        primaryBtnLink="/catalog"
-        secondaryBtnText={t("secondary")}
-        secondaryBtnLink="/admin/products"
-        imageSrc={heroProduct?.image ?? "/images/product-placeholder.svg"}
-        imageAlt={heroProduct?.name ?? t("imageAlt")}
-        benefits={[t("benefit1"), t("benefit2"), t("benefit3")]}
+        badge={(heroSettings.badgeI18n?.[locale] ?? heroSettings.badge) || t("badge")}
+        title={(heroSettings.titleI18n?.[locale] ?? heroSettings.title) || t("title")}
+        description={(heroSettings.descriptionI18n?.[locale] ?? heroSettings.description) || t("description")}
+        primaryBtnText={(heroSettings.primaryTextI18n?.[locale] ?? heroSettings.primaryText) || t("primary")}
+        primaryBtnLink={heroSettings.primaryLink || "/catalog"}
+        secondaryBtnText={(heroSettings.secondaryTextI18n?.[locale] ?? heroSettings.secondaryText) || t("secondary")}
+        secondaryBtnLink={heroSettings.secondaryLink || "/admin/products"}
+        imageSrc={heroSettings.imageSrc || heroProduct?.image || "/images/product-placeholder.svg"}
+        imageAlt={(heroSettings.imageAltI18n?.[locale] ?? heroSettings.imageAlt) || heroProduct?.name || t("imageAlt")}
+        benefits={localizedBenefits.length > 0 ? localizedBenefits : [t("benefit1"), t("benefit2"), t("benefit3")]}
       />
 
       {seasons.length > 0 ? (

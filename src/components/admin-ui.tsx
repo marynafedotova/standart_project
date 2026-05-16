@@ -1,4 +1,7 @@
-﻿import Link from "next/link";
+"use client";
+
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 import type { DbPostBlock } from "@/lib/json-db";
 import type { ReactNode } from "react";
 
@@ -55,50 +58,95 @@ type AdminPost = {
   createdAt: Date;
 };
 
+type NavGroup = {
+  title: string;
+  hrefs: string[];
+  links: Array<{ href: string; label: string }>;
+};
+
+const ADMIN_NAV_GROUPS: NavGroup[] = [
+  {
+    title: "Головна",
+    hrefs: ["/admin/home"],
+    links: [{ href: "/admin/home", label: "Hero-секція" }]
+  },
+  {
+    title: "Товари",
+    hrefs: ["/admin/products", "/admin/product", "/admin/categories", "/admin/brands", "/admin/seasons", "/admin/colors", "/admin/sizes", "/admin/materials", "/admin/warehouses"],
+    links: [
+      { href: "/admin/products", label: "Усі товари" },
+      { href: "/admin/product/new", label: "Новий товар" },
+      { href: "/admin/categories", label: "Категорії" },
+      { href: "/admin/brands", label: "Бренди" },
+      { href: "/admin/seasons", label: "Сезони" },
+      { href: "/admin/colors", label: "Кольори" },
+      { href: "/admin/sizes", label: "Розміри" },
+      { href: "/admin/materials", label: "Матеріали" },
+      { href: "/admin/warehouses", label: "Склади" }
+    ]
+  },
+  {
+    title: "Замовлення",
+    hrefs: ["/admin/orders"],
+    links: [
+      { href: "/admin/orders", label: "Усі замовлення" },
+      { href: "/admin/orders/new", label: "Нове замовлення" }
+    ]
+  },
+  {
+    title: "Клієнти",
+    hrefs: ["/admin/clients"],
+    links: [{ href: "/admin/clients", label: "База клієнтів" }]
+  },
+  {
+    title: "Контент",
+    hrefs: ["/admin/news", "/admin/post"],
+    links: [
+      { href: "/admin/news", label: "Новини" },
+      { href: "/admin/post/new", label: "Новий допис" }
+    ]
+  }
+];
+
+function isActivePath(pathname: string, href: string) {
+  return pathname === href || pathname.startsWith(`${href}/`);
+}
+
+function isGroupOpen(pathname: string, group: NavGroup) {
+  return group.hrefs.some((href) => isActivePath(pathname, href));
+}
+
 export function AdminShell({ children }: { children: ReactNode }) {
+  const pathname = usePathname() ?? "";
+  const isLoginPage = pathname === "/admin/login" || pathname.endsWith("/admin/login");
+
+  if (isLoginPage) {
+    return <div className="adminContent adminContentWide">{children}</div>;
+  }
+
   return (
     <div className="adminShell">
       <aside className="adminSidebar">
         <Link href="/" className="brand">Standard Shop</Link>
         <span className="sidebarLabel">Адмін-панель</span>
+
         <nav className="adminNavGroups">
-          <div className="adminNavGroup">
-            <span className="adminNavHeading">Товари</span>
-            <div className="adminNav">
-              <Link href="/admin/products">Усі товари</Link>
-              <Link href="/admin/product/new">Новий товар</Link>
-              <Link href="/admin/categories">Категорії</Link>
-              <Link href="/admin/brands">Бренди</Link>
-              <Link href="/admin/seasons">Сезони</Link>
-              <Link href="/admin/colors">Кольори</Link>
-              <Link href="/admin/sizes">Розміри</Link>
-              <Link href="/admin/materials">Матеріали</Link>
-              <Link href="/admin/warehouses">Склади</Link>
-            </div>
-          </div>
-
-          <div className="adminNavGroup">
-            <span className="adminNavHeading">Замовлення</span>
-            <div className="adminNav">
-              <Link href="/admin/orders">Усі замовлення</Link>
-              <Link href="/admin/orders/new">Нове замовлення</Link>
-            </div>
-          </div>
-
-          <div className="adminNavGroup">
-            <span className="adminNavHeading">Клієнти</span>
-            <div className="adminNav">
-              <Link href="/admin/clients">База клієнтів</Link>
-            </div>
-          </div>
-
-          <div className="adminNavGroup">
-            <span className="adminNavHeading">Контент</span>
-            <div className="adminNav">
-              <Link href="/admin/news">Новини</Link>
-              <Link href="/admin/post/new">Новий допис</Link>
-            </div>
-          </div>
+          {ADMIN_NAV_GROUPS.map((group) => (
+            <details key={group.title} className="adminNavGroup" open={isGroupOpen(pathname, group)}>
+              <summary className="adminNavHeading">{group.title}</summary>
+              <div className="adminNav">
+                {group.links.map((link) => (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    className={isActivePath(pathname, link.href) ? "active" : undefined}
+                  >
+                    {link.label}
+                  </Link>
+                ))}
+              </div>
+            </details>
+          ))}
         </nav>
       </aside>
       <div className="adminContent">{children}</div>
@@ -141,10 +189,10 @@ export function AdminProductsList({ products }: { products: AdminProduct[] }) {
             {products.map((product) => (
               <tr key={product.id}>
                 <td>
-                    <Link href={`/admin/product/${product.id}`}>
-                      {product.sku}
-                    </Link>
-                  </td>
+                  <Link href={`/admin/product/${product.id}`}>
+                    {product.sku}
+                  </Link>
+                </td>
                 <td><Link href={`/admin/product/${product.id}`}>{product.name}</Link></td>
                 <td>{product.category}</td>
                 <td>{product.price} грн</td>

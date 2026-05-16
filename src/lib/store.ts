@@ -130,6 +130,13 @@ export async function getPosts() {
     .map((item) => ({ ...item, createdAt: new Date(item.createdAt) }));
 }
 
+export async function getHeroSettings() {
+  noStore();
+  const { readDb } = await import("@/lib/json-db");
+  const db = await readDb();
+  return db.heroSettings;
+}
+
 export async function getAdminPosts() {
   noStore();
   const { readDb } = await import("@/lib/json-db");
