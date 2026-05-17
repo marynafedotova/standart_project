@@ -589,6 +589,18 @@ p { color: var(--muted); }
   font-size: .85rem;
   font-weight: 600;
 }
+.formField:has(.requiredInput) > span::after,
+.requiredField > span .requiredMark {
+  content: "";
+}
+.formField:has(.requiredInput) > span::after {
+  content: " *";
+  color: #c2410c;
+}
+.requiredMark {
+  margin-left: .2rem;
+  color: #c2410c;
+}
 .formField .helperText {
   font-size: .74rem;
   line-height: 1.35;
@@ -639,29 +651,46 @@ p { color: var(--muted); }
 .compactAdminCard .splitGrid {
   gap: .65rem;
 }
+.adminDenseGrid {
+  align-items: start;
+}
 .compactAdminCard .button,
 .compactAdminCard .chip {
   border-radius: 10px;
+}
+.productEditorLayout {
+  grid-template-columns: minmax(0, 1fr);
+  max-width: 980px;
 }
 .adminSectionCollapse {
   gap: 0;
 }
 .adminSectionSummary {
-  display: block;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: .75rem;
   cursor: pointer;
   list-style: none;
   user-select: none;
+}
+.adminSectionSummaryContent {
+  min-width: 0;
+}
+.adminSectionSummaryMeta {
+  display: block;
+  margin-top: .3rem;
 }
 .adminSectionSummary::-webkit-details-marker {
   display: none;
 }
 .adminSectionSummary::after {
   content: "+";
-  float: right;
-  margin-top: -1.4rem;
+  flex: 0 0 auto;
   color: var(--muted-soft);
   font-size: 1rem;
   font-weight: 700;
+  line-height: 1.2;
 }
 .adminSectionCollapse[open] .adminSectionSummary::after {
   content: "−";
@@ -670,6 +699,44 @@ p { color: var(--muted); }
   display: grid;
   gap: .65rem;
   padding-top: .35rem;
+}
+.adminInlineNote {
+  padding: .75rem .9rem;
+  background: var(--bg-soft);
+}
+.adminSubmitBar {
+  position: sticky;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: .75rem;
+  padding-bottom: 1rem;
+  border-top: 1px solid var(--line);
+  background: linear-gradient(180deg, rgba(255,255,255,.88) 0%, rgba(255,255,255,.98) 32%);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 10px 30px rgba(15, 23, 42, .08);
+}
+.adminSubmitBarText {
+  min-width: 0;
+}
+.adminSubmitBarText p {
+  margin: .2rem 0 0;
+  font-size: .9rem;
+}
+.adminSubmitBar .actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+.requiredInput {
+  border-color: rgba(194, 65, 12, .45) !important;
+  box-shadow: 0 0 0 1px rgba(194, 65, 12, .08);
+}
+.requiredInput:focus {
+  border-color: #c2410c !important;
+  box-shadow: 0 0 0 3px rgba(194, 65, 12, .12);
+  outline: none;
 }
 .tableWrap { overflow-x: auto; }
 table { width: 100%; border-collapse: collapse; }

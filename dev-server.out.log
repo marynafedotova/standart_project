@@ -1,0 +1,20 @@
+
+> standard-shop-next-template@0.1.0 dev
+> next dev
+
+   ▲ Next.js 15.5.14
+   - Local:        http://localhost:3001
+   - Network:      http://192.168.50.173:3001
+   - Environments: .env.local, .env
+
+ ✓ Starting...
+ ✓ Ready in 2.3s
+ ✓ Compiled /middleware in 184ms (131 modules)
+ ○ Compiling /[locale] ...
+ ✓ Compiled /[locale] in 949ms (806 modules)
+ GET /uk 200 in 2133ms
+ GET /uk 200 in 786ms
+ GET /uk 200 in 4209ms
+ ○ Compiling /admin/login ...
+ ✓ Compiled /admin/login in 828ms (821 modules)
+ GET /admin/login?next=%2Fadmin%2Fproduct%2Fnew 200 in 1180ms

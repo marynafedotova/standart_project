@@ -85,10 +85,13 @@ const EMPTY_PRODUCT_FORM: ProductPayload = {
   features: ""
 };
 
-function Field({ label, hint, children }: { label: string; hint?: string; children: ReactNode }) {
+function Field({ label, hint, required = false, children }: { label: string; hint?: string; required?: boolean; children: ReactNode }) {
   return (
-    <label className="formField">
-      <span>{label}</span>
+    <label className={`formField${required ? " requiredField" : ""}`}>
+      <span>
+        {label}
+        {required ? <strong className="requiredMark">*</strong> : null}
+      </span>
       {hint ? <small className="helperText">{hint}</small> : null}
       {children}
     </label>
@@ -98,19 +101,24 @@ function Field({ label, hint, children }: { label: string; hint?: string; childr
 function Section({
   title,
   description,
+  summary,
   children,
   defaultOpen = true
 }: {
   title: string;
   description: string;
+  summary?: ReactNode;
   children: ReactNode;
   defaultOpen?: boolean;
 }) {
   return (
     <details className="panel formGrid adminSectionCollapse" open={defaultOpen}>
       <summary className="sectionHeading compact adminSectionSummary">
-        <span className="eyebrow">{title}</span>
-        <p>{description}</p>
+        <div className="adminSectionSummaryContent">
+          <span className="eyebrow">{title}</span>
+          <p>{description}</p>
+          {summary ? <small className="helperText adminSectionSummaryMeta">{summary}</small> : null}
+        </div>
       </summary>
       <div className="adminSectionBody">{children}</div>
     </details>
@@ -324,6 +332,10 @@ export function AdminProductFormV5({
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [submitMode, setSubmitMode] = useState<SubmitMode>("save");
+  const variantSummary =
+    form.group.trim() || form.variantColor.trim()
+      ? `Група: ${form.group.trim() || "не вказана"} · Колір: ${form.variantColor.trim() || "не вказаний"}`
+      : "Не використовується, якщо товар не має кольорових варіантів.";
 
   function resetCreateForm() {
     setForm(EMPTY_PRODUCT_FORM);
@@ -531,15 +543,19 @@ export function AdminProductFormV5({
         <LogoutButton />
       </div>
 
-      <form className="editorGrid compactAdminCard" onSubmit={handleSubmit}>
-        <Section title="Основне" description="Базова інформація про товар, яку побачить клієнт." defaultOpen>
+      <form className="editorGrid compactAdminCard productEditorLayout" onSubmit={handleSubmit}>
+        <Section title="Основне" description="Базова інформація про товар, яку побачить клієнт." summary={variantSummary} defaultOpen>
           <Field label="Назва товару" hint="Основна назва за замовчуванням.">
-            <input value={form.name} onChange={(event) => handleNameChange(event.target.value)} type="text" required />
+            <input className="requiredInput" value={form.name} onChange={(event) => handleNameChange(event.target.value)} type="text" required />
           </Field>
 
           <Field label="Код товару" hint="Внутрішній код для пошуку та обліку.">
             <input value={form.code} onChange={(event) => setForm((current) => ({ ...current, code: event.target.value }))} type="text" />
           </Field>
+
+          <div className="panel adminInlineNote" style={{ gridColumn: "1 / -1" }}>
+            <strong>Як це працює:</strong> поле "Група товару" об'єднує один товар у різних кольорах, а "Колір варіанту" задає назву конкретного кольору для перемикача. Якщо кольорових варіантів немає, обидва поля можна залишити порожніми.
+          </div>
 
           <div className="splitGrid">
             <Field label="Група товару" hint="Пов'язує один товар у різних кольорах.">
@@ -581,7 +597,7 @@ export function AdminProductFormV5({
 
           <div className="splitGrid">
             <Field label="Ціна">
-              <input value={form.price === 0 ? "" : String(form.price)} onChange={(event) => setForm((current) => ({ ...current, price: parseNonNegativeNumber(event.target.value) }))} type="text" inputMode="decimal" required />
+              <input className="requiredInput" value={form.price === 0 ? "" : String(form.price)} onChange={(event) => setForm((current) => ({ ...current, price: parseNonNegativeNumber(event.target.value) }))} type="text" inputMode="decimal" required />
             </Field>
 
             <Field label="Стара ціна">
@@ -618,7 +634,7 @@ export function AdminProductFormV5({
           </Field>
 
           <Field label="Бренд">
-            <select value={form.brand} onChange={(event) => setForm((current) => ({ ...current, brand: event.target.value }))}>
+            <select className="requiredInput" value={form.brand} onChange={(event) => setForm((current) => ({ ...current, brand: event.target.value }))}>
               <option value="">Виберіть бренд</option>
               {brands.map((brand) => (
                 <option key={brand} value={brand}>
@@ -786,17 +802,30 @@ export function AdminProductFormV5({
           {error ? <p className="errorText">{error}</p> : null}
           {message ? <p className="successText">{message}</p> : null}
 
+        </Section>
+
+        <div className="panel adminSubmitBar">
+          <div className="adminSubmitBarText">
+            <span className="eyebrow">{"\u0414\u0456\u0457"}</span>
+            <p>{"\u041f\u043e\u043b\u044f \u0437\u0456 \u0437\u0456\u0440\u043e\u0447\u043a\u043e\u044e \u043e\u0431\u043e\u0432'\u044f\u0437\u043a\u043e\u0432\u0456. \u041a\u043d\u043e\u043f\u043a\u0438 \u0437\u0431\u0435\u0440\u0435\u0436\u0435\u043d\u043d\u044f \u0437\u0430\u0432\u0436\u0434\u0438 \u0434\u043e\u0441\u0442\u0443\u043f\u043d\u0456 \u0432 \u043d\u0438\u0436\u043d\u0456\u0439 \u043f\u0430\u043d\u0435\u043b\u0456."}</p>
+          </div>
           <div className="actions">
             <button type="submit" className="button primary" disabled={loading || uploading} onClick={() => setSubmitMode("save")}>
-              {loading && submitMode === "save" ? "Зберігаємо..." : product ? "Зберегти зміни" : "Зберегти"}
+              {loading && submitMode === "save"
+                ? "\u0417\u0431\u0435\u0440\u0456\u0433\u0430\u0454\u043c\u043e..."
+                : product
+                  ? "\u0417\u0431\u0435\u0440\u0435\u0433\u0442\u0438 \u0437\u043c\u0456\u043d\u0438"
+                  : "\u0417\u0431\u0435\u0440\u0435\u0433\u0442\u0438"}
             </button>
             {!product ? (
               <button type="submit" className="button secondary" disabled={loading || uploading} onClick={() => setSubmitMode("continue")}>
-                {loading && submitMode === "continue" ? "Зберігаємо..." : "Зберегти і продовжити"}
+                {loading && submitMode === "continue"
+                  ? "\u0417\u0431\u0435\u0440\u0456\u0433\u0430\u0454\u043c\u043e..."
+                  : "\u0417\u0431\u0435\u0440\u0435\u0433\u0442\u0438 \u0456 \u043f\u0440\u043e\u0434\u043e\u0432\u0436\u0438\u0442\u0438"}
               </button>
             ) : null}
           </div>
-        </Section>
+        </div>
       </form>
     </section>
   );

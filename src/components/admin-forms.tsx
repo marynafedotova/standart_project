@@ -36,7 +36,6 @@ export function LoginForm({ nextPath }: { nextPath: string }) {
   return (
     <form className="panel formGrid loginCard" onSubmit={handleSubmit}>
       <h1>Вхід до адмінки</h1>
-      <p>Використовуйте email і пароль адміністратора з `.env` або з бази проєкту.</p>
       <input value={email} onChange={(event) => setEmail(event.target.value)} type="email" placeholder="Email" required />
       <input
         value={password}
