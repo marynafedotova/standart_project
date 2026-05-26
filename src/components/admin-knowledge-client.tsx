@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { LogoutButton } from "@/components/admin-forms";
-import { EMPLOYEE_ROLE_OPTIONS, type EmployeeRole, type KnowledgeArticleRecord, type KnowledgeArticleStatus } from "@/lib/admin-workspace";
+import { EMPLOYEE_ROLE_OPTIONS, type EmployeeRole, type KnowledgeArticleRecord, type KnowledgeArticleStatus } from "@/lib/admin-workspace-shared";
 
 type KnowledgeFormState = {
   id?: string;

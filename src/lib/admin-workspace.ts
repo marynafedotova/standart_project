@@ -1,35 +1,8 @@
 import { randomUUID } from "node:crypto";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
-
-export type EmployeeRole = "owner" | "admin" | "manager" | "editor" | "support" | "viewer";
-export type KnowledgeArticleStatus = "draft" | "published";
-
-export type EmployeeRecord = {
-  id: string;
-  name: string;
-  email: string;
-  role: EmployeeRole;
-  department: string;
-  notes: string;
-  active: boolean;
-  createdAt: string;
-  updatedAt: string;
-};
-
-export type KnowledgeArticleRecord = {
-  id: string;
-  title: string;
-  slug: string;
-  category: string;
-  summary: string;
-  content: string;
-  status: KnowledgeArticleStatus;
-  audience: EmployeeRole[];
-  updatedBy: string;
-  createdAt: string;
-  updatedAt: string;
-};
+import type { EmployeeRecord, EmployeeRole, KnowledgeArticleRecord, KnowledgeArticleStatus } from "@/lib/admin-workspace-shared";
+export { EMPLOYEE_ROLE_OPTIONS } from "@/lib/admin-workspace-shared";
 
 type AdminWorkspaceData = {
   employees: EmployeeRecord[];
@@ -43,19 +16,6 @@ const DEFAULT_DATA: AdminWorkspaceData = {
   employees: [],
   knowledgeArticles: []
 };
-
-export const EMPLOYEE_ROLE_OPTIONS: Array<{
-  value: EmployeeRole;
-  label: string;
-  description: string;
-}> = [
-  { value: "owner", label: "Власник", description: "Повний доступ до всіх розділів і налаштувань." },
-  { value: "admin", label: "Адміністратор", description: "Керує операційною роботою та співробітниками." },
-  { value: "manager", label: "Менеджер", description: "Працює з товарами, замовленнями та клієнтами." },
-  { value: "editor", label: "Контент", description: "Редагує товари, новини та базу знань." },
-  { value: "support", label: "Підтримка", description: "Працює із замовленнями, клієнтами та інструкціями." },
-  { value: "viewer", label: "Перегляд", description: "Має доступ лише до перегляду та навчальних матеріалів." }
-];
 
 async function ensureStorage() {
   await mkdir(STORAGE_DIR, { recursive: true });

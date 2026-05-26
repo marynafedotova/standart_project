@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireAdminApi } from "@/lib/auth";
-import { deleteKnowledgeArticle, getKnowledgeArticles, saveKnowledgeArticle, type EmployeeRole, type KnowledgeArticleStatus } from "@/lib/admin-workspace";
+import { deleteKnowledgeArticle, getKnowledgeArticles, saveKnowledgeArticle } from "@/lib/admin-workspace";
+import type { EmployeeRole, KnowledgeArticleStatus } from "@/lib/admin-workspace-shared";
 
 export async function POST(request: Request) {
   const admin = await requireAdminApi();
