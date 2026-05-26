@@ -11,25 +11,43 @@ export async function POST(request: Request) {
 
   const body = (await request.json()) as {
     id?: string;
-    name?: string;
+    firstName?: string;
+    lastName?: string;
+    position?: string;
+    birthDate?: string;
+    phone?: string;
     email?: string;
+    login?: string;
+    password?: string;
     role?: EmployeeRole;
     department?: string;
     notes?: string;
+    permissions?: import("@/lib/admin-workspace-shared").AdminSectionPermission[];
     active?: boolean;
   };
 
-  if (!body.name?.trim() || !body.email?.trim() || !body.role) {
-    return NextResponse.json({ error: "Заповніть ім'я, email та роль." }, { status: 400 });
+  if (!body.firstName?.trim() || !body.lastName?.trim() || !body.email?.trim() || !body.login?.trim() || !body.role) {
+    return NextResponse.json({ error: "Заповніть ім'я, прізвище, email, логін та роль." }, { status: 400 });
+  }
+
+  if (!body.id && !body.password?.trim()) {
+    return NextResponse.json({ error: "Для нового співробітника потрібно задати пароль." }, { status: 400 });
   }
 
   await saveEmployee({
     id: body.id,
-    name: body.name,
+    firstName: body.firstName,
+    lastName: body.lastName,
+    position: body.position ?? "",
+    birthDate: body.birthDate ?? "",
+    phone: body.phone ?? "",
     email: body.email,
+    login: body.login,
+    password: body.password?.trim() ?? "",
     role: body.role,
     department: body.department ?? "",
     notes: body.notes ?? "",
+    permissions: body.permissions ?? [],
     active: body.active ?? true
   });
 

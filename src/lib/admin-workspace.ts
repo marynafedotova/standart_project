@@ -2,7 +2,15 @@ import { randomUUID } from "node:crypto";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import type { EmployeeRecord, EmployeeRole, KnowledgeArticleRecord, KnowledgeArticleStatus } from "@/lib/admin-workspace-shared";
+import bcrypt from "bcryptjs";
+import {
+  EMPLOYEE_ROLE_OPTIONS,
+  type AdminSectionPermission,
+  type EmployeeRecord,
+  type EmployeeRole,
+  type KnowledgeArticleRecord,
+  type KnowledgeArticleStatus
+} from "@/lib/admin-workspace-shared";
 
 type AdminWorkspaceData = {
   employees: EmployeeRecord[];
@@ -47,6 +55,10 @@ async function writeWorkspace(data: AdminWorkspaceData) {
   await writeFile(STORAGE_PATH, JSON.stringify(data, null, 2), "utf8");
 }
 
+function uniquePermissions(permissions: AdminSectionPermission[]) {
+  return Array.from(new Set(permissions));
+}
+
 function nowIso() {
   return new Date().toISOString();
 }
@@ -61,23 +73,38 @@ function slugifyArticle(value: string) {
 
 export async function getEmployees() {
   const data = await readWorkspace();
-  return [...data.employees].sort((a, b) => a.name.localeCompare(b.name, "uk"));
+  return [...data.employees].sort((a, b) => `${a.lastName} ${a.firstName}`.localeCompare(`${b.lastName} ${b.firstName}`, "uk"));
 }
 
-export async function saveEmployee(input: Partial<EmployeeRecord> & Pick<EmployeeRecord, "name" | "email" | "role">) {
+export async function saveEmployee(
+  input: Partial<EmployeeRecord> &
+    Pick<EmployeeRecord, "firstName" | "lastName" | "email" | "login" | "role"> & {
+      password?: string;
+      permissions?: AdminSectionPermission[];
+    }
+) {
   const data = await readWorkspace();
   const timestamp = nowIso();
   const id = input.id ?? randomUUID();
+  const existing = data.employees.find((item) => item.id === id);
+  const roleDefaults = EMPLOYEE_ROLE_OPTIONS.find((item) => item.value === input.role)?.defaultPermissions ?? ["dashboard", "knowledge"];
 
   const nextRecord: EmployeeRecord = {
     id,
-    name: input.name.trim(),
+    firstName: input.firstName.trim(),
+    lastName: input.lastName.trim(),
+    position: input.position?.trim() ?? "",
+    birthDate: input.birthDate?.trim() ?? "",
+    phone: input.phone?.trim() ?? "",
     email: input.email.trim().toLowerCase(),
+    login: input.login.trim().toLowerCase(),
+    passwordHash: input.password ? await bcrypt.hash(input.password, 10) : existing?.passwordHash,
     role: input.role,
     department: input.department?.trim() ?? "",
     notes: input.notes?.trim() ?? "",
+    permissions: uniquePermissions(input.permissions && input.permissions.length > 0 ? input.permissions : existing?.permissions ?? roleDefaults),
     active: input.active ?? true,
-    createdAt: data.employees.find((item) => item.id === id)?.createdAt ?? timestamp,
+    createdAt: existing?.createdAt ?? timestamp,
     updatedAt: timestamp
   };
 
@@ -138,4 +165,12 @@ export async function deleteKnowledgeArticle(id: string) {
 
 export async function getAdminWorkspaceSnapshot() {
   return readWorkspace();
+}
+
+export async function findEmployeeByLogin(loginOrEmail: string) {
+  const data = await readWorkspace();
+  const normalized = loginOrEmail.trim().toLowerCase();
+  return (
+    data.employees.find((item) => item.active && (item.login === normalized || item.email.toLowerCase() === normalized)) ?? null
+  );
 }
