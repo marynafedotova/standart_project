@@ -1,15 +1,15 @@
 import { randomUUID } from "node:crypto";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { EmployeeRecord, EmployeeRole, KnowledgeArticleRecord, KnowledgeArticleStatus } from "@/lib/admin-workspace-shared";
-export { EMPLOYEE_ROLE_OPTIONS } from "@/lib/admin-workspace-shared";
 
 type AdminWorkspaceData = {
   employees: EmployeeRecord[];
   knowledgeArticles: KnowledgeArticleRecord[];
 };
 
-const STORAGE_DIR = join(process.cwd(), "data");
+const STORAGE_DIR = process.env.VERCEL ? join(tmpdir(), "standard-shop-admin") : join(process.cwd(), "data");
 const STORAGE_PATH = join(STORAGE_DIR, "admin-workspace.json");
 
 const DEFAULT_DATA: AdminWorkspaceData = {
@@ -55,7 +55,7 @@ function slugifyArticle(value: string) {
   return value
     .toLowerCase()
     .trim()
-    .replace(/[^a-z0-9а-яіїєґ]+/gi, "-")
+    .replace(/[^\p{L}\p{N}]+/gu, "-")
     .replace(/^-+|-+$/g, "");
 }
 
