@@ -20,7 +20,7 @@ export async function POST(request: Request) {
   };
 
   if (!body.title?.trim() || !body.category?.trim() || !body.content?.trim() || !body.status) {
-    return NextResponse.json({ error: "Заповніть заголовок, категорію, статус та текст статті." }, { status: 400 });
+    return NextResponse.json({ error: "Заповніть заголовок, тематику, статус та текст статті." }, { status: 400 });
   }
 
   await saveKnowledgeArticle({

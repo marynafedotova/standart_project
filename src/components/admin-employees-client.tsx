@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import { LogoutButton } from "@/components/admin-forms";
 import {
@@ -129,7 +130,12 @@ export function AdminEmployeesClient({ initialEmployees }: { initialEmployees: E
           <span className="eyebrow">Команда</span>
           <h1>Співробітники та доступ до адмінки</h1>
         </div>
-        <LogoutButton />
+        <div className="actions">
+          <Link href="/admin/employees/structure" className="button secondary">
+            Структура компанії
+          </Link>
+          <LogoutButton />
+        </div>
       </div>
 
       <div className="splitAdminLayout">

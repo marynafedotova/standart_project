@@ -121,6 +121,7 @@ const ADMIN_NAV_GROUPS: NavGroup[] = [
     hrefs: ["/admin/employees", "/admin/knowledge"],
     links: [
       { href: "/admin/employees", label: "Співробітники" },
+      { href: "/admin/employees/structure", label: "Структура компанії" },
       { href: "/admin/knowledge", label: "База знань" }
     ]
   }

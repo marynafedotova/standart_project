@@ -124,6 +124,11 @@ export async function getKnowledgeArticles() {
   return [...data.knowledgeArticles].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
 }
 
+export async function getKnowledgeArticleBySlug(slug: string) {
+  const data = await readWorkspace();
+  return data.knowledgeArticles.find((item) => item.slug === slug) ?? null;
+}
+
 export async function saveKnowledgeArticle(
   input: Partial<KnowledgeArticleRecord> &
     Pick<KnowledgeArticleRecord, "title" | "content" | "category" | "status"> & {
