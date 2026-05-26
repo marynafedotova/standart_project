@@ -729,6 +729,45 @@ p { color: var(--muted); }
   flex-wrap: wrap;
   justify-content: flex-end;
 }
+.splitAdminLayout {
+  display: grid;
+  grid-template-columns: minmax(320px, .9fr) minmax(0, 1.3fr);
+  gap: 1rem;
+  align-items: start;
+}
+.stackList {
+  display: grid;
+  gap: .85rem;
+}
+.softPanel {
+  background: rgba(255,255,255,.72);
+}
+.checkboxRow {
+  display: flex;
+  align-items: center;
+  gap: .6rem;
+}
+.statusBadge {
+  display: inline-flex;
+  align-items: center;
+  padding: .3rem .55rem;
+  border-radius: 999px;
+  font-size: .76rem;
+  font-weight: 700;
+}
+.statusActive {
+  background: rgba(34, 197, 94, .12);
+  color: #166534;
+}
+.statusMuted {
+  background: rgba(148, 163, 184, .18);
+  color: #475569;
+}
+.ghostDanger {
+  border: 1px solid rgba(190, 24, 93, .18);
+  background: rgba(190, 24, 93, .06);
+  color: #9d174d;
+}
 .requiredInput {
   border-color: rgba(194, 65, 12, .45) !important;
   box-shadow: 0 0 0 1px rgba(194, 65, 12, .08);
@@ -858,6 +897,7 @@ blockquote.align-center {
   .shellNav { width: 100%; justify-content: flex-start; }
   .localeSwitch { width: 100%; }
   .stickySide { position: static; }
+  .splitAdminLayout { grid-template-columns: 1fr; }
   .heroCard { min-height: 340px; }
   .adminHeader { grid-template-columns: 1fr; }
 }

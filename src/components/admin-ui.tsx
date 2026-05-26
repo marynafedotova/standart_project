@@ -2,8 +2,8 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import type { DbPostBlock } from "@/lib/json-db";
 import type { ReactNode } from "react";
+import type { DbPostBlock } from "@/lib/json-db";
 
 type WarehouseStockEntry = {
   warehouse: string;
@@ -72,7 +72,17 @@ const ADMIN_NAV_GROUPS: NavGroup[] = [
   },
   {
     title: "Товари",
-    hrefs: ["/admin/products", "/admin/product", "/admin/categories", "/admin/brands", "/admin/seasons", "/admin/colors", "/admin/sizes", "/admin/materials", "/admin/warehouses"],
+    hrefs: [
+      "/admin/products",
+      "/admin/product",
+      "/admin/categories",
+      "/admin/brands",
+      "/admin/seasons",
+      "/admin/colors",
+      "/admin/sizes",
+      "/admin/materials",
+      "/admin/warehouses"
+    ],
     links: [
       { href: "/admin/products", label: "Усі товари" },
       { href: "/admin/product/new", label: "Новий товар" },
@@ -105,6 +115,14 @@ const ADMIN_NAV_GROUPS: NavGroup[] = [
       { href: "/admin/news", label: "Новини" },
       { href: "/admin/post/new", label: "Новий допис" }
     ]
+  },
+  {
+    title: "Команда",
+    hrefs: ["/admin/employees", "/admin/knowledge"],
+    links: [
+      { href: "/admin/employees", label: "Співробітники" },
+      { href: "/admin/knowledge", label: "База знань" }
+    ]
   }
 ];
 
@@ -127,7 +145,9 @@ export function AdminShell({ children }: { children: ReactNode }) {
   return (
     <div className="adminShell">
       <aside className="adminSidebar">
-        <Link href="/" className="brand">Standard Shop</Link>
+        <Link href="/" className="brand">
+          Standard Shop
+        </Link>
         <span className="sidebarLabel">Адмін-панель</span>
 
         <nav className="adminNavGroups">
@@ -136,11 +156,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
               <summary className="adminNavHeading">{group.title}</summary>
               <div className="adminNav">
                 {group.links.map((link) => (
-                  <Link
-                    key={link.href}
-                    href={link.href}
-                    className={isActivePath(pathname, link.href) ? "active" : undefined}
-                  >
+                  <Link key={link.href} href={link.href} className={isActivePath(pathname, link.href) ? "active" : undefined}>
                     {link.label}
                   </Link>
                 ))}
@@ -162,7 +178,9 @@ export function AdminProductsList({ products }: { products: AdminProduct[] }) {
           <span className="eyebrow">Товари</span>
           <h1>Список товарів</h1>
         </div>
-        <Link href="/admin/product/new" className="button primary">Створити товар</Link>
+        <Link href="/admin/product/new" className="button primary">
+          Створити товар
+        </Link>
       </div>
       <div className="panel toolbar">
         <input type="search" placeholder="Пошук за назвою або SKU" disabled />
@@ -189,11 +207,11 @@ export function AdminProductsList({ products }: { products: AdminProduct[] }) {
             {products.map((product) => (
               <tr key={product.id}>
                 <td>
-                  <Link href={`/admin/product/${product.id}`}>
-                    {product.sku}
-                  </Link>
+                  <Link href={`/admin/product/${product.id}`}>{product.sku}</Link>
                 </td>
-                <td><Link href={`/admin/product/${product.id}`}>{product.name}</Link></td>
+                <td>
+                  <Link href={`/admin/product/${product.id}`}>{product.name}</Link>
+                </td>
                 <td>{product.category}</td>
                 <td>{product.price} грн</td>
                 <td>{product.stock}</td>
@@ -215,7 +233,9 @@ export function AdminNewsList({ posts }: { posts: AdminPost[] }) {
           <span className="eyebrow">Новини</span>
           <h1>Список дописів</h1>
         </div>
-        <Link href="/admin/post/new" className="button primary">Створити допис</Link>
+        <Link href="/admin/post/new" className="button primary">
+          Створити допис
+        </Link>
       </div>
       <div className="blogGrid">
         {posts.map((post) => (
