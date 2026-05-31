@@ -1,7 +1,15 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEditor, EditorContent } from "@tiptap/react";
+import StarterKit from "@tiptap/starter-kit";
+import LinkExtension from "@tiptap/extension-link";
+import ImageExtension from "@tiptap/extension-image";
+import TextAlign from "@tiptap/extension-text-align";
+import { TextStyle } from "@tiptap/extension-text-style";
+import FontFamily from "@tiptap/extension-font-family";
+import { Node, mergeAttributes } from "@tiptap/core";
+import { useRef, useState } from "react";
 import { LogoutButton } from "@/components/admin-forms";
 import { EMPLOYEE_ROLE_OPTIONS, type EmployeeRole, type KnowledgeArticleRecord, type KnowledgeArticleStatus } from "@/lib/admin-workspace-shared";
 
@@ -10,16 +18,8 @@ type KnowledgeFormState = {
   title: string;
   category: string;
   summary: string;
-  content: string;
   status: KnowledgeArticleStatus;
   audience: EmployeeRole[];
-};
-
-type KnowledgeGroup = {
-  category: string;
-  count: number;
-  publishedCount: number;
-  articles: KnowledgeArticleRecord[];
 };
 
 const DEFAULT_AUDIENCE: EmployeeRole[] = ["owner", "admin", "manager", "editor", "support", "viewer"];
@@ -28,58 +28,106 @@ const EMPTY_FORM: KnowledgeFormState = {
   title: "",
   category: "",
   summary: "",
-  content: "",
   status: "draft",
   audience: DEFAULT_AUDIENCE
 };
+
+const VideoEmbed = Node.create({
+  name: "videoEmbed",
+  group: "block",
+  atom: true,
+  addAttributes() {
+    return {
+      src: {
+        default: null
+      }
+    };
+  },
+  parseHTML() {
+    return [{ tag: "iframe[data-knowledge-video]" }];
+  },
+  renderHTML({ HTMLAttributes }) {
+    return [
+      "iframe",
+      mergeAttributes(HTMLAttributes, {
+        "data-knowledge-video": "true",
+        allow: "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share",
+        allowfullscreen: "true",
+        loading: "lazy"
+      })
+    ];
+  }
+});
 
 function normalizeCategory(value: string) {
   return value.trim() || "Без теми";
 }
 
-function formatAudience(audience: EmployeeRole[]) {
-  return audience
-    .map((role) => EMPLOYEE_ROLE_OPTIONS.find((item) => item.value === role)?.label ?? role)
-    .join(", ");
-}
-
-function buildGroups(articles: KnowledgeArticleRecord[]): KnowledgeGroup[] {
-  const map = new Map<string, KnowledgeArticleRecord[]>();
-
-  for (const article of articles) {
-    const key = normalizeCategory(article.category);
-    const group = map.get(key) ?? [];
-    group.push(article);
-    map.set(key, group);
+function textToHtml(value: string) {
+  if (/<[a-z][\s\S]*>/i.test(value)) {
+    return value;
   }
 
-  return [...map.entries()]
-    .map(([category, categoryArticles]) => ({
-      category,
-      count: categoryArticles.length,
-      publishedCount: categoryArticles.filter((article) => article.status === "published").length,
-      articles: [...categoryArticles].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
-    }))
-    .sort((a, b) => a.category.localeCompare(b.category, "uk"));
+  return value
+    .split(/\r?\n\r?\n/)
+    .map((paragraph) => paragraph.trim())
+    .filter(Boolean)
+    .map((paragraph) => `<p>${paragraph.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;")}</p>`)
+    .join("");
+}
+
+function toEmbedUrl(value: string) {
+  try {
+    const url = new URL(value);
+    if (url.hostname.includes("youtu.be")) {
+      const id = url.pathname.replace("/", "");
+      return id ? `https://www.youtube.com/embed/${id}` : value;
+    }
+
+    if (url.hostname.includes("youtube.com")) {
+      const id = url.searchParams.get("v");
+      return id ? `https://www.youtube.com/embed/${id}` : value;
+    }
+
+    return value;
+  } catch {
+    return value;
+  }
 }
 
 export function AdminKnowledgeClient({ initialArticles }: { initialArticles: KnowledgeArticleRecord[] }) {
+  const imageInputRef = useRef<HTMLInputElement | null>(null);
   const [articles, setArticles] = useState(initialArticles);
   const [form, setForm] = useState<KnowledgeFormState>(EMPTY_FORM);
   const [saving, setSaving] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState<string>("all");
 
-  const groups = useMemo(() => buildGroups(articles), [articles]);
-
-  const visibleGroups = useMemo(() => {
-    if (selectedCategory === "all") {
-      return groups;
+  const editor = useEditor({
+    immediatelyRender: false,
+    extensions: [
+      StarterKit,
+      TextStyle,
+      FontFamily,
+      LinkExtension.configure({
+        openOnClick: false,
+        autolink: true,
+        defaultProtocol: "https"
+      }),
+      ImageExtension,
+      VideoEmbed,
+      TextAlign.configure({
+        types: ["heading", "paragraph"]
+      })
+    ],
+    content: "",
+    editorProps: {
+      attributes: {
+        class: "tiptapEditor knowledgeRichEditor"
+      }
     }
-
-    return groups.filter((group) => group.category === selectedCategory);
-  }, [groups, selectedCategory]);
+  });
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -87,12 +135,22 @@ export function AdminKnowledgeClient({ initialArticles }: { initialArticles: Kno
     setError("");
     setMessage("");
 
+    const html = editor?.getHTML() ?? "";
+    const text = editor?.getText().trim() ?? "";
+
+    if (!text && !html.includes("<img")) {
+      setError("Додайте текст або зображення до статті.");
+      setSaving(false);
+      return;
+    }
+
     const response = await fetch("/api/admin/knowledge", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         ...form,
-        category: normalizeCategory(form.category)
+        category: normalizeCategory(form.category),
+        content: html
       })
     });
     const data = await response.json();
@@ -103,30 +161,11 @@ export function AdminKnowledgeClient({ initialArticles }: { initialArticles: Kno
       return;
     }
 
-    setArticles(data.articles);
+    setArticles(data.articles ?? []);
     setForm(EMPTY_FORM);
-    setSelectedCategory("all");
+    editor?.commands.clearContent();
     setMessage("Статтю збережено.");
     setSaving(false);
-  }
-
-  async function handleDelete(id: string) {
-    setError("");
-    setMessage("");
-
-    const response = await fetch(`/api/admin/knowledge?id=${id}`, { method: "DELETE" });
-    const data = await response.json();
-
-    if (!response.ok) {
-      setError(data.error ?? "Не вдалося видалити статтю.");
-      return;
-    }
-
-    setArticles(data.articles);
-    if (form.id === id) {
-      setForm(EMPTY_FORM);
-    }
-    setMessage("Статтю видалено.");
   }
 
   function handleAudienceToggle(role: EmployeeRole) {
@@ -144,13 +183,67 @@ export function AdminKnowledgeClient({ initialArticles }: { initialArticles: Kno
       title: article.title,
       category: article.category,
       summary: article.summary,
-      content: article.content,
       status: article.status,
       audience: article.audience
     });
-    setSelectedCategory(article.category);
+    editor?.commands.setContent(textToHtml(article.content));
     setError("");
     setMessage("");
+  }
+
+  function toggleLink() {
+    if (!editor) {
+      return;
+    }
+
+    const previousUrl = editor.getAttributes("link").href as string | undefined;
+    const url = window.prompt("Вставте посилання", previousUrl ?? "https://");
+
+    if (url === null) {
+      return;
+    }
+
+    if (!url.trim()) {
+      editor.chain().focus().unsetLink().run();
+      return;
+    }
+
+    editor.chain().focus().extendMarkRange("link").setLink({ href: url.trim() }).run();
+  }
+
+  function insertVideo() {
+    if (!editor) {
+      return;
+    }
+
+    const url = window.prompt("Вставте посилання на відео", "https://");
+    if (!url?.trim()) {
+      return;
+    }
+
+    editor.chain().focus().insertContent({ type: "videoEmbed", attrs: { src: toEmbedUrl(url.trim()) } }).run();
+  }
+
+  async function uploadImage(file: File) {
+    const formData = new FormData();
+    formData.append("file", file);
+    setUploadingImage(true);
+    setError("");
+
+    const response = await fetch("/api/upload", {
+      method: "POST",
+      body: formData
+    });
+    const data = await response.json();
+
+    if (!response.ok) {
+      setError(data.error ?? "Не вдалося завантажити зображення.");
+      setUploadingImage(false);
+      return;
+    }
+
+    editor?.chain().focus().setImage({ src: data.url }).run();
+    setUploadingImage(false);
   }
 
   return (
@@ -158,14 +251,19 @@ export function AdminKnowledgeClient({ initialArticles }: { initialArticles: Kno
       <div className="adminHeader">
         <div>
           <span className="eyebrow">База знань</span>
-          <h1>Інструкції для співробітників</h1>
-          <p>Зберігайте матеріали по тематиках, щоб співробітники швидко знаходили потрібні інструкції.</p>
+          <h1>Керування статтями</h1>
+          <p>Створюйте інструкції з форматованим текстом, зображеннями, посиланнями, списками та відеоматеріалами.</p>
         </div>
-        <LogoutButton />
+        <div className="actions">
+          <Link href="/admin/knowledge/articles" className="button secondary">
+            Перегляд статей
+          </Link>
+          <LogoutButton />
+        </div>
       </div>
 
-      <div className="splitAdminLayout knowledgeLayout">
-        <form className="panel formGrid knowledgeEditorPanel" onSubmit={handleSubmit}>
+      <form className="editorGrid singleColumn" onSubmit={handleSubmit}>
+        <div className="panel formGrid">
           <div>
             <span className="eyebrow">Матеріал</span>
             <h2>{form.id ? "Редагування статті" : "Нова стаття"}</h2>
@@ -173,34 +271,32 @@ export function AdminKnowledgeClient({ initialArticles }: { initialArticles: Kno
 
           <label className="formField">
             <span>Заголовок</span>
-            <input
-              value={form.title}
-              onChange={(event) => setForm((current) => ({ ...current, title: event.target.value }))}
-              required
-            />
+            <input value={form.title} onChange={(event) => setForm((current) => ({ ...current, title: event.target.value }))} required />
           </label>
 
-          <label className="formField">
-            <span>Тематика</span>
-            <input
-              value={form.category}
-              onChange={(event) => setForm((current) => ({ ...current, category: event.target.value }))}
-              placeholder="Наприклад: Продажі, Склад, Робота з клієнтами"
-              required
-            />
-          </label>
+          <div className="splitGrid">
+            <label className="formField">
+              <span>Тематика</span>
+              <input
+                value={form.category}
+                onChange={(event) => setForm((current) => ({ ...current, category: event.target.value }))}
+                placeholder="Наприклад: Продажі, Склад, Робота з клієнтами"
+                required
+              />
+            </label>
+
+            <label className="formField">
+              <span>Статус</span>
+              <select value={form.status} onChange={(event) => setForm((current) => ({ ...current, status: event.target.value as KnowledgeArticleStatus }))}>
+                <option value="draft">Чернетка</option>
+                <option value="published">Опубліковано</option>
+              </select>
+            </label>
+          </div>
 
           <label className="formField">
             <span>Короткий опис</span>
             <textarea rows={3} value={form.summary} onChange={(event) => setForm((current) => ({ ...current, summary: event.target.value }))} />
-          </label>
-
-          <label className="formField">
-            <span>Статус</span>
-            <select value={form.status} onChange={(event) => setForm((current) => ({ ...current, status: event.target.value as KnowledgeArticleStatus }))}>
-              <option value="draft">Чернетка</option>
-              <option value="published">Опубліковано</option>
-            </select>
           </label>
 
           <div className="formField">
@@ -218,117 +314,108 @@ export function AdminKnowledgeClient({ initialArticles }: { initialArticles: Kno
               ))}
             </div>
           </div>
+        </div>
 
-          <label className="formField">
-            <span>Повний текст</span>
-            <textarea
-              rows={12}
-              value={form.content}
-              onChange={(event) => setForm((current) => ({ ...current, content: event.target.value }))}
-              placeholder="Додайте покрокову інструкцію, правила, приклади, чеклісти."
-              required
-            />
-          </label>
+        <div className="panel formGrid">
+          <div className="metaLine">
+            <h2>Контент статті</h2>
+            <div className="toolbarButtons tiptapToolbar knowledgeToolbar">
+              <button type="button" onClick={() => editor?.chain().focus().toggleHeading({ level: 2 }).run()}>H2</button>
+              <button type="button" onClick={() => editor?.chain().focus().toggleHeading({ level: 3 }).run()}>H3</button>
+              <button type="button" onClick={() => editor?.chain().focus().setFontFamily("Inter, sans-serif").run()}>Sans</button>
+              <button type="button" onClick={() => editor?.chain().focus().setFontFamily("Georgia, serif").run()}>Serif</button>
+              <button type="button" onClick={() => editor?.chain().focus().setFontFamily('"Courier New", monospace').run()}>Mono</button>
+              <button type="button" onClick={() => editor?.chain().focus().unsetFontFamily().run()}>Reset</button>
+              <button type="button" onClick={() => editor?.chain().focus().toggleBold().run()}>B</button>
+              <button type="button" onClick={() => editor?.chain().focus().toggleItalic().run()}>I</button>
+              <button type="button" onClick={() => editor?.chain().focus().toggleBulletList().run()}>Список</button>
+              <button type="button" onClick={() => editor?.chain().focus().toggleOrderedList().run()}>1. Список</button>
+              <button type="button" onClick={() => editor?.chain().focus().toggleBlockquote().run()}>Цитата</button>
+              <button type="button" onClick={toggleLink}>Посилання</button>
+              <button type="button" onClick={() => imageInputRef.current?.click()}>Зображення</button>
+              <button type="button" onClick={insertVideo}>Відео</button>
+              <button type="button" onClick={() => editor?.chain().focus().setTextAlign("left").run()}>Ліворуч</button>
+              <button type="button" onClick={() => editor?.chain().focus().setTextAlign("center").run()}>Центр</button>
+              <button type="button" onClick={() => editor?.chain().focus().undo().run()}>Undo</button>
+              <button type="button" onClick={() => editor?.chain().focus().redo().run()}>Redo</button>
+            </div>
+          </div>
 
+          <input
+            ref={imageInputRef}
+            type="file"
+            accept="image/png,image/jpeg,image/webp,image/gif"
+            className="visuallyHidden"
+            onChange={(event) => {
+              const file = event.target.files?.[0];
+              if (file) {
+                void uploadImage(file);
+              }
+              event.target.value = "";
+            }}
+          />
+
+          {uploadingImage ? <p>Завантажуємо зображення...</p> : null}
+          <EditorContent editor={editor} />
+        </div>
+
+        <div className="panel formGrid">
           {error ? <p className="errorText">{error}</p> : null}
           {message ? <p className="successText">{message}</p> : null}
 
           <div className="actions">
-            <button type="submit" className="button primary" disabled={saving}>
+            <button type="submit" className="button primary" disabled={saving || !editor}>
               {saving ? "Зберігаємо..." : form.id ? "Оновити статтю" : "Додати статтю"}
             </button>
             {form.id ? (
-              <button type="button" className="button secondary" onClick={() => setForm(EMPTY_FORM)}>
+              <button
+                type="button"
+                className="button secondary"
+                onClick={() => {
+                  setForm(EMPTY_FORM);
+                  editor?.commands.clearContent();
+                }}
+              >
                 Скасувати редагування
               </button>
             ) : null}
           </div>
-        </form>
+        </div>
 
-        <div className="panel knowledgeLibraryPanel">
+        <div className="panel">
           <div className="adminHeader">
             <div>
-              <span className="eyebrow">Бібліотека</span>
-              <h2>Матеріали по тематиках</h2>
+              <span className="eyebrow">Створені матеріали</span>
+              <h2>Швидке редагування</h2>
             </div>
-
-            <label className="knowledgeFilter">
-              <span className="visuallyHidden">Фільтр по тематиці</span>
-              <select value={selectedCategory} onChange={(event) => setSelectedCategory(event.target.value)}>
-                <option value="all">Усі тематики</option>
-                {groups.map((group) => (
-                  <option key={group.category} value={group.category}>
-                    {group.category}
-                  </option>
-                ))}
-              </select>
-            </label>
-          </div>
-
-          <div className="knowledgeTopicGrid">
-            {groups.map((group) => (
-              <button
-                key={group.category}
-                type="button"
-                className={`knowledgeTopicCard ${selectedCategory === group.category ? "active" : ""}`}
-                onClick={() => setSelectedCategory((current) => (current === group.category ? "all" : group.category))}
-              >
-                <strong>{group.category}</strong>
-                <span>{group.count} статей</span>
-                <small>{group.publishedCount} опубліковано</small>
-              </button>
-            ))}
           </div>
 
           <div className="stackList">
-            {visibleGroups.map((group) => (
-              <section key={group.category} className="knowledgeTopicSection">
-                <div className="knowledgeTopicHeader">
+            {articles.map((article) => (
+              <article key={article.id} className="panel softPanel knowledgeArticleCard">
+                <div className="adminHeader">
                   <div>
-                    <h3>{group.category}</h3>
-                    <p>{group.count} статей у темі</p>
+                    <h3>{article.title}</h3>
+                    <p>{article.category}</p>
                   </div>
+                  <span className={`statusBadge ${article.status === "published" ? "statusActive" : "statusMuted"}`}>
+                    {article.status === "published" ? "Опубліковано" : "Чернетка"}
+                  </span>
                 </div>
-
-                <div className="stackList">
-                  {group.articles.map((article) => (
-                    <article key={article.id} className="panel softPanel knowledgeArticleCard">
-                      <div className="adminHeader">
-                        <div>
-                          <h4>{article.title}</h4>
-                          {article.summary ? <p>{article.summary}</p> : null}
-                        </div>
-                        <span className={`statusBadge ${article.status === "published" ? "statusActive" : "statusMuted"}`}>
-                          {article.status === "published" ? "Опубліковано" : "Чернетка"}
-                        </span>
-                      </div>
-
-                      <div className="knowledgeMeta">
-                        <span>Доступ: {formatAudience(article.audience)}</span>
-                        <span>Оновлено: {new Date(article.updatedAt).toLocaleString("uk-UA")}</span>
-                      </div>
-
-                      <div className="actions">
-                        <Link href={`/admin/knowledge/${article.slug}`} className="button secondary">
-                          Переглянути
-                        </Link>
-                        <button type="button" className="button secondary" onClick={() => handleEdit(article)}>
-                          Редагувати
-                        </button>
-                        <button type="button" className="button ghostDanger" onClick={() => handleDelete(article.id)}>
-                          Видалити
-                        </button>
-                      </div>
-                    </article>
-                  ))}
+                <div className="actions">
+                  <Link href={`/admin/knowledge/${article.slug}`} className="button secondary">
+                    Переглянути
+                  </Link>
+                  <button type="button" className="button secondary" onClick={() => handleEdit(article)}>
+                    Редагувати
+                  </button>
                 </div>
-              </section>
+              </article>
             ))}
-
             {articles.length === 0 ? <p>Поки що в базі знань немає статей.</p> : null}
           </div>
         </div>
-      </div>
+      </form>
     </section>
   );
 }

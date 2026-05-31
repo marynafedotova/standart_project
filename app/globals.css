@@ -1037,6 +1037,24 @@ blockquote.align-center {
   line-height: 1.75;
 }
 
+.knowledgeArticleBody iframe,
+.knowledgeRichEditor iframe {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  min-height: 280px;
+  border: 0;
+  border-radius: 14px;
+  background: var(--divider);
+}
+
+.knowledgeRichEditor {
+  min-height: 440px;
+}
+
+.knowledgeToolbar {
+  align-items: center;
+}
+
 .knowledgeFilter select {
   min-width: 220px;
 }

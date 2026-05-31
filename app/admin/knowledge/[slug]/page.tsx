@@ -9,6 +9,19 @@ function formatAudience(audience: string[]) {
   return audience.map((role) => EMPLOYEE_ROLE_OPTIONS.find((item) => item.value === role)?.label ?? role).join(", ");
 }
 
+function textToHtml(value: string) {
+  if (/<[a-z][\s\S]*>/i.test(value)) {
+    return value;
+  }
+
+  return value
+    .split(/\r?\n\r?\n/)
+    .map((paragraph) => paragraph.trim())
+    .filter(Boolean)
+    .map((paragraph) => `<p>${paragraph.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;")}</p>`)
+    .join("");
+}
+
 export default async function AdminKnowledgeArticlePage({ params }: { params: Promise<{ slug: string }> }) {
   await requireAdmin();
   const { slug } = await params;
@@ -31,9 +44,14 @@ export default async function AdminKnowledgeArticlePage({ params }: { params: Pr
 
       <div className="panel knowledgeArticleHero">
         <div className="knowledgeArticleHeroTop">
-          <Link href="/admin/knowledge" className="button secondary">
-            До бази знань
-          </Link>
+          <div className="actions">
+            <Link href="/admin/knowledge/articles" className="button secondary">
+              До перегляду статей
+            </Link>
+            <Link href="/admin/knowledge" className="button secondary">
+              Керування
+            </Link>
+          </div>
           <span className={`statusBadge ${article.status === "published" ? "statusActive" : "statusMuted"}`}>
             {article.status === "published" ? "Опубліковано" : "Чернетка"}
           </span>
@@ -59,11 +77,7 @@ export default async function AdminKnowledgeArticlePage({ params }: { params: Pr
         </div>
       </div>
 
-      <article className="panel knowledgeArticleBody">
-        {article.content.split(/\r?\n\r?\n/).map((paragraph, index) => (
-          <p key={`${article.id}-${index}`}>{paragraph}</p>
-        ))}
-      </article>
+      <article className="panel knowledgeArticleBody postRichText" dangerouslySetInnerHTML={{ __html: textToHtml(article.content) }} />
     </section>
   );
 }
