@@ -4,11 +4,6 @@ import Link from "next/link";
 import { LogoutButton } from "@/components/admin-forms";
 import { EMPLOYEE_ROLE_OPTIONS, type EmployeeRecord, type EmployeeRole } from "@/lib/admin-workspace-shared";
 
-type DepartmentGroup = {
-  name: string;
-  members: EmployeeRecord[];
-};
-
 const ROLE_ORDER: EmployeeRole[] = ["owner", "admin", "manager", "editor", "support", "viewer"];
 
 function getRoleWeight(role: EmployeeRole) {
@@ -24,7 +19,7 @@ function buildDepartments(employees: EmployeeRecord[]) {
   const map = new Map<string, EmployeeRecord[]>();
 
   for (const employee of employees) {
-    const key = employee.department.trim() || "Без відділу";
+    const key = employee.department?.trim() || "Без відділу";
     const current = map.get(key) ?? [];
     current.push(employee);
     map.set(key, current);
@@ -46,9 +41,9 @@ function buildDepartments(employees: EmployeeRecord[]) {
 }
 
 export function AdminEmployeesStructureClient({ initialEmployees }: { initialEmployees: EmployeeRecord[] }) {
-  const activeEmployees = initialEmployees.filter((employee) => employee.active);
-  const leadership = activeEmployees.filter((employee) => employee.role === "owner" || employee.role === "admin");
-  const departments = buildDepartments(activeEmployees);
+  const visibleEmployees = initialEmployees.filter((employee) => employee.active !== false);
+  const leadership = visibleEmployees.filter((employee) => employee.role === "owner" || employee.role === "admin");
+  const departments = buildDepartments(visibleEmployees);
 
   return (
     <section className="adminPage">
@@ -67,9 +62,14 @@ export function AdminEmployeesStructureClient({ initialEmployees }: { initialEmp
             <span className="eyebrow">Оргструктура</span>
             <h2>Керівний рівень</h2>
           </div>
-          <Link href="/admin/employees" className="button secondary">
-            До співробітників
-          </Link>
+          <div className="actions">
+            <Link href="/admin/employees/list" className="button secondary">
+              Список співробітників
+            </Link>
+            <Link href="/admin/employees" className="button secondary">
+              Додати співробітника
+            </Link>
+          </div>
         </div>
 
         <div className="orgLeadershipGrid">
@@ -110,7 +110,9 @@ export function AdminEmployeesStructureClient({ initialEmployees }: { initialEmp
                     <strong>
                       {employee.lastName} {employee.firstName}
                     </strong>
-                    <span className={`statusBadge ${employee.active ? "statusActive" : "statusMuted"}`}>{getRoleLabel(employee.role)}</span>
+                    <span className={`statusBadge ${employee.active === false ? "statusMuted" : "statusActive"}`}>
+                      {getRoleLabel(employee.role)}
+                    </span>
                   </div>
 
                   <p>{employee.position || "Посада не вказана"}</p>
@@ -122,14 +124,18 @@ export function AdminEmployeesStructureClient({ initialEmployees }: { initialEmp
                     {employee.birthDate ? <span>Дата народження: {employee.birthDate}</span> : null}
                   </div>
 
-                  {employee.notes ? <p className="orgNotes">{employee.notes}</p> : null}
+                  <div className="actions">
+                    <Link href={`/admin/employees?edit=${employee.id}`} className="button secondary">
+                      Редагувати
+                    </Link>
+                  </div>
                 </article>
               ))}
             </div>
           </section>
         ))}
 
-        {departments.length === 0 ? <p>Поки що немає активних співробітників для побудови структури.</p> : null}
+        {departments.length === 0 ? <p>Поки що немає співробітників для побудови структури.</p> : null}
       </div>
     </section>
   );

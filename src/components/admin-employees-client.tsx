@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { LogoutButton } from "@/components/admin-forms";
 import {
   ADMIN_PERMISSION_OPTIONS,
@@ -44,7 +44,13 @@ const EMPTY_FORM: EmployeeFormState = {
   active: true
 };
 
-export function AdminEmployeesClient({ initialEmployees }: { initialEmployees: EmployeeRecord[] }) {
+export function AdminEmployeesClient({
+  initialEmployees,
+  editEmployeeId
+}: {
+  initialEmployees: EmployeeRecord[];
+  editEmployeeId?: string;
+}) {
   const [employees, setEmployees] = useState(initialEmployees);
   const [form, setForm] = useState<EmployeeFormState>(EMPTY_FORM);
   const [saving, setSaving] = useState(false);
@@ -105,9 +111,20 @@ export function AdminEmployeesClient({ initialEmployees }: { initialEmployees: E
       department: employee.department,
       notes: employee.notes,
       permissions: employee.permissions,
-      active: employee.active
+      active: employee.active !== false
     });
   }
+
+  useEffect(() => {
+    if (!editEmployeeId) {
+      return;
+    }
+
+    const employee = employees.find((item) => item.id === editEmployeeId);
+    if (employee) {
+      handleEdit(employee);
+    }
+  }, [editEmployeeId, employees]);
 
   function togglePermission(permission: AdminSectionPermission) {
     setForm((current) => ({
@@ -131,6 +148,9 @@ export function AdminEmployeesClient({ initialEmployees }: { initialEmployees: E
           <h1>Співробітники та доступ до адмінки</h1>
         </div>
         <div className="actions">
+          <Link href="/admin/employees/list" className="button secondary">
+            Список співробітників
+          </Link>
           <Link href="/admin/employees/structure" className="button secondary">
             Структура компанії
           </Link>
