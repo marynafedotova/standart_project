@@ -118,11 +118,18 @@ const ADMIN_NAV_GROUPS: NavGroup[] = [
   },
   {
     title: "Команда",
-    hrefs: ["/admin/employees", "/admin/knowledge"],
+    hrefs: ["/admin/employees"],
     links: [
       { href: "/admin/employees", label: "Співробітники" },
-      { href: "/admin/employees/structure", label: "Структура компанії" },
-      { href: "/admin/knowledge", label: "База знань" }
+      { href: "/admin/employees/structure", label: "Структура компанії" }
+    ]
+  },
+  {
+    title: "База знань",
+    hrefs: ["/admin/knowledge"],
+    links: [
+      { href: "/admin/knowledge", label: "Керування" },
+      { href: "/admin/knowledge/articles", label: "Перегляд статей" }
     ]
   }
 ];
