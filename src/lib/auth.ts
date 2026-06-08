@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { SignJWT, jwtVerify } from "jose";
 import bcrypt from "bcryptjs";
 import { readDb } from "@/lib/json-db";
+import { findEmployeeById } from "@/lib/admin-workspace";
 
 const COOKIE_NAME = "admin_session";
 
@@ -76,5 +77,20 @@ export async function requireAdminApi() {
   }
 
   const db = await readDb();
-  return db.adminUsers.find((item) => item.id === session.userId) ?? null;
+  const admin = db.adminUsers.find((item) => item.id === session.userId);
+  if (admin) {
+    return admin;
+  }
+
+  const employee = await findEmployeeById(session.userId);
+  return employee
+    ? {
+        id: employee.id,
+        email: employee.email,
+        passwordHash: employee.passwordHash ?? "",
+        name: `${employee.firstName} ${employee.lastName}`.trim(),
+        createdAt: employee.createdAt,
+        updatedAt: employee.updatedAt
+      }
+    : null;
 }

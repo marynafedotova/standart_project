@@ -1,8 +1,6 @@
 import { randomUUID } from "node:crypto";
-import { mkdir, readFile, writeFile } from "node:fs/promises";
-import { tmpdir } from "node:os";
-import { join } from "node:path";
 import bcrypt from "bcryptjs";
+import { prisma } from "@/lib/prisma";
 import {
   EMPLOYEE_ROLE_OPTIONS,
   type AdminSectionPermission,
@@ -11,49 +9,6 @@ import {
   type KnowledgeArticleRecord,
   type KnowledgeArticleStatus
 } from "@/lib/admin-workspace-shared";
-
-type AdminWorkspaceData = {
-  employees: EmployeeRecord[];
-  knowledgeArticles: KnowledgeArticleRecord[];
-};
-
-const STORAGE_DIR = process.env.VERCEL ? join(tmpdir(), "standard-shop-admin") : join(process.cwd(), "data");
-const STORAGE_PATH = join(STORAGE_DIR, "admin-workspace.json");
-
-const DEFAULT_DATA: AdminWorkspaceData = {
-  employees: [],
-  knowledgeArticles: []
-};
-
-async function ensureStorage() {
-  await mkdir(STORAGE_DIR, { recursive: true });
-
-  try {
-    await readFile(STORAGE_PATH, "utf8");
-  } catch {
-    await writeFile(STORAGE_PATH, JSON.stringify(DEFAULT_DATA, null, 2), "utf8");
-  }
-}
-
-async function readWorkspace(): Promise<AdminWorkspaceData> {
-  await ensureStorage();
-  const raw = await readFile(STORAGE_PATH, "utf8");
-
-  try {
-    const parsed = JSON.parse(raw) as Partial<AdminWorkspaceData>;
-    return {
-      employees: Array.isArray(parsed.employees) ? parsed.employees : [],
-      knowledgeArticles: Array.isArray(parsed.knowledgeArticles) ? parsed.knowledgeArticles : []
-    };
-  } catch {
-    return DEFAULT_DATA;
-  }
-}
-
-async function writeWorkspace(data: AdminWorkspaceData) {
-  await ensureStorage();
-  await writeFile(STORAGE_PATH, JSON.stringify(data, null, 2), "utf8");
-}
 
 function uniquePermissions(permissions: AdminSectionPermission[]) {
   return Array.from(new Set(permissions));
@@ -71,9 +26,95 @@ function slugifyArticle(value: string) {
     .replace(/^-+|-+$/g, "");
 }
 
+function employeeFromRow(row: {
+  id: string;
+  firstName: string;
+  lastName: string;
+  position: string;
+  birthDate: string;
+  phone: string;
+  email: string;
+  login: string;
+  passwordHash: string | null;
+  role: string;
+  department: string;
+  notes: string;
+  permissions: unknown;
+  active: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}): EmployeeRecord {
+  return {
+    id: row.id,
+    firstName: row.firstName,
+    lastName: row.lastName,
+    position: row.position,
+    birthDate: row.birthDate,
+    phone: row.phone,
+    email: row.email,
+    login: row.login,
+    passwordHash: row.passwordHash ?? undefined,
+    role: row.role as EmployeeRole,
+    department: row.department,
+    notes: row.notes,
+    permissions: Array.isArray(row.permissions) ? (row.permissions as AdminSectionPermission[]) : [],
+    active: row.active,
+    createdAt: row.createdAt.toISOString(),
+    updatedAt: row.updatedAt.toISOString()
+  };
+}
+
+function knowledgeArticleFromRow(row: {
+  id: string;
+  title: string;
+  slug: string;
+  category: string;
+  summary: string;
+  content: string;
+  status: string;
+  audience: unknown;
+  updatedBy: string;
+  createdAt: Date;
+  updatedAt: Date;
+}): KnowledgeArticleRecord {
+  return {
+    id: row.id,
+    title: row.title,
+    slug: row.slug,
+    category: row.category,
+    summary: row.summary,
+    content: row.content,
+    status: row.status as KnowledgeArticleStatus,
+    audience: Array.isArray(row.audience)
+      ? (row.audience as EmployeeRole[])
+      : ["owner", "admin", "manager", "editor", "support", "viewer"],
+    updatedBy: row.updatedBy,
+    createdAt: row.createdAt.toISOString(),
+    updatedAt: row.updatedAt.toISOString()
+  };
+}
+
+async function createUniqueArticleSlug(title: string, currentId?: string, preferredSlug?: string) {
+  const base = slugifyArticle(preferredSlug || title) || `article-${Date.now()}`;
+  let candidate = base;
+  let index = 2;
+
+  while (true) {
+    const existing = await prisma.knowledgeArticle.findUnique({ where: { slug: candidate } });
+    if (!existing || existing.id === currentId) {
+      return candidate;
+    }
+
+    candidate = `${base}-${index}`;
+    index += 1;
+  }
+}
+
 export async function getEmployees() {
-  const data = await readWorkspace();
-  return [...data.employees].sort((a, b) => `${a.lastName} ${a.firstName}`.localeCompare(`${b.lastName} ${b.firstName}`, "uk"));
+  const rows = await prisma.employee.findMany({
+    orderBy: [{ lastName: "asc" }, { firstName: "asc" }]
+  });
+  return rows.map(employeeFromRow);
 }
 
 export async function saveEmployee(
@@ -83,11 +124,17 @@ export async function saveEmployee(
       permissions?: AdminSectionPermission[];
     }
 ) {
-  const data = await readWorkspace();
   const timestamp = nowIso();
   const id = input.id ?? randomUUID();
-  const existing = data.employees.find((item) => item.id === id);
-  const roleDefaults = EMPLOYEE_ROLE_OPTIONS.find((item) => item.value === input.role)?.defaultPermissions ?? ["dashboard", "knowledge"];
+  const existing = input.id ? await prisma.employee.findUnique({ where: { id } }) : null;
+  const roleDefaults = EMPLOYEE_ROLE_OPTIONS.find((item) => item.value === input.role)?.defaultPermissions ?? [
+    "dashboard",
+    "knowledge"
+  ];
+  const existingPermissions = existing && Array.isArray(existing.permissions) ? (existing.permissions as AdminSectionPermission[]) : [];
+  const permissions = uniquePermissions(
+    input.permissions && input.permissions.length > 0 ? input.permissions : existingPermissions.length > 0 ? existingPermissions : roleDefaults
+  );
 
   const nextRecord: EmployeeRecord = {
     id,
@@ -98,35 +145,84 @@ export async function saveEmployee(
     phone: input.phone?.trim() ?? "",
     email: input.email.trim().toLowerCase(),
     login: input.login.trim().toLowerCase(),
-    passwordHash: input.password ? await bcrypt.hash(input.password, 10) : existing?.passwordHash,
+    passwordHash: input.password ? await bcrypt.hash(input.password, 10) : existing?.passwordHash ?? undefined,
     role: input.role,
     department: input.department?.trim() ?? "",
     notes: input.notes?.trim() ?? "",
-    permissions: uniquePermissions(input.permissions && input.permissions.length > 0 ? input.permissions : existing?.permissions ?? roleDefaults),
+    permissions,
     active: input.active ?? true,
-    createdAt: existing?.createdAt ?? timestamp,
+    createdAt: existing?.createdAt.toISOString() ?? timestamp,
     updatedAt: timestamp
   };
 
-  data.employees = [...data.employees.filter((item) => item.id !== id), nextRecord];
-  await writeWorkspace(data);
+  await prisma.employee.upsert({
+    where: { id },
+    update: {
+      firstName: nextRecord.firstName,
+      lastName: nextRecord.lastName,
+      position: nextRecord.position,
+      birthDate: nextRecord.birthDate,
+      phone: nextRecord.phone,
+      email: nextRecord.email,
+      login: nextRecord.login,
+      passwordHash: nextRecord.passwordHash,
+      role: nextRecord.role,
+      department: nextRecord.department,
+      notes: nextRecord.notes,
+      permissions: nextRecord.permissions,
+      active: nextRecord.active
+    },
+    create: {
+      id: nextRecord.id,
+      firstName: nextRecord.firstName,
+      lastName: nextRecord.lastName,
+      position: nextRecord.position,
+      birthDate: nextRecord.birthDate,
+      phone: nextRecord.phone,
+      email: nextRecord.email,
+      login: nextRecord.login,
+      passwordHash: nextRecord.passwordHash,
+      role: nextRecord.role,
+      department: nextRecord.department,
+      notes: nextRecord.notes,
+      permissions: nextRecord.permissions,
+      active: nextRecord.active
+    }
+  });
+
   return nextRecord;
 }
 
 export async function deleteEmployee(id: string) {
-  const data = await readWorkspace();
-  data.employees = data.employees.filter((item) => item.id !== id);
-  await writeWorkspace(data);
+  await prisma.employee.delete({ where: { id } });
+}
+
+export async function findEmployeeByLogin(loginOrEmail: string) {
+  const normalized = loginOrEmail.trim().toLowerCase();
+  const row = await prisma.employee.findFirst({
+    where: {
+      active: true,
+      OR: [{ login: normalized }, { email: normalized }]
+    }
+  });
+  return row ? employeeFromRow(row) : null;
+}
+
+export async function findEmployeeById(id: string) {
+  const row = await prisma.employee.findUnique({ where: { id } });
+  return row && row.active ? employeeFromRow(row) : null;
 }
 
 export async function getKnowledgeArticles() {
-  const data = await readWorkspace();
-  return [...data.knowledgeArticles].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
+  const rows = await prisma.knowledgeArticle.findMany({
+    orderBy: { updatedAt: "desc" }
+  });
+  return rows.map(knowledgeArticleFromRow);
 }
 
 export async function getKnowledgeArticleBySlug(slug: string) {
-  const data = await readWorkspace();
-  return data.knowledgeArticles.find((item) => item.slug === slug) ?? null;
+  const row = await prisma.knowledgeArticle.findUnique({ where: { slug } });
+  return row ? knowledgeArticleFromRow(row) : null;
 }
 
 export async function saveKnowledgeArticle(
@@ -136,14 +232,15 @@ export async function saveKnowledgeArticle(
       updatedBy?: string;
     }
 ) {
-  const data = await readWorkspace();
   const timestamp = nowIso();
   const id = input.id ?? randomUUID();
+  const existing = input.id ? await prisma.knowledgeArticle.findUnique({ where: { id } }) : null;
+  const slug = await createUniqueArticleSlug(input.title, id, input.slug?.trim() || existing?.slug || input.title);
 
   const nextRecord: KnowledgeArticleRecord = {
     id,
     title: input.title.trim(),
-    slug: slugifyArticle(input.slug?.trim() || input.title),
+    slug,
     category: input.category.trim(),
     summary: input.summary?.trim() ?? "",
     content: input.content.trim(),
@@ -153,29 +250,43 @@ export async function saveKnowledgeArticle(
         ? input.audience
         : ["owner", "admin", "manager", "editor", "support", "viewer"],
     updatedBy: input.updatedBy?.trim() || "admin",
-    createdAt: data.knowledgeArticles.find((item) => item.id === id)?.createdAt ?? timestamp,
+    createdAt: existing?.createdAt.toISOString() ?? timestamp,
     updatedAt: timestamp
   };
 
-  data.knowledgeArticles = [...data.knowledgeArticles.filter((item) => item.id !== id), nextRecord];
-  await writeWorkspace(data);
+  await prisma.knowledgeArticle.upsert({
+    where: { id },
+    update: {
+      title: nextRecord.title,
+      slug: nextRecord.slug,
+      category: nextRecord.category,
+      summary: nextRecord.summary,
+      content: nextRecord.content,
+      status: nextRecord.status,
+      audience: nextRecord.audience,
+      updatedBy: nextRecord.updatedBy
+    },
+    create: {
+      id: nextRecord.id,
+      title: nextRecord.title,
+      slug: nextRecord.slug,
+      category: nextRecord.category,
+      summary: nextRecord.summary,
+      content: nextRecord.content,
+      status: nextRecord.status,
+      audience: nextRecord.audience,
+      updatedBy: nextRecord.updatedBy
+    }
+  });
+
   return nextRecord;
 }
 
 export async function deleteKnowledgeArticle(id: string) {
-  const data = await readWorkspace();
-  data.knowledgeArticles = data.knowledgeArticles.filter((item) => item.id !== id);
-  await writeWorkspace(data);
+  await prisma.knowledgeArticle.delete({ where: { id } });
 }
 
 export async function getAdminWorkspaceSnapshot() {
-  return readWorkspace();
-}
-
-export async function findEmployeeByLogin(loginOrEmail: string) {
-  const data = await readWorkspace();
-  const normalized = loginOrEmail.trim().toLowerCase();
-  return (
-    data.employees.find((item) => item.active && (item.login === normalized || item.email.toLowerCase() === normalized)) ?? null
-  );
+  const [employees, knowledgeArticles] = await Promise.all([getEmployees(), getKnowledgeArticles()]);
+  return { employees, knowledgeArticles };
 }
