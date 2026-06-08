@@ -23,6 +23,8 @@ export async function POST(request: Request) {
     department?: string;
     notes?: string;
     permissions?: import("@/lib/admin-workspace-shared").AdminSectionPermission[];
+    isManager?: boolean;
+    managerId?: string;
     active?: boolean;
   };
 
@@ -48,6 +50,8 @@ export async function POST(request: Request) {
     department: body.department ?? "",
     notes: body.notes ?? "",
     permissions: body.permissions ?? [],
+    isManager: body.isManager ?? false,
+    managerId: body.managerId ?? "",
     active: body.active ?? true
   });
 

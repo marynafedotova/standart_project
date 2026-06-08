@@ -25,6 +25,8 @@ type EmployeeFormState = {
   department: string;
   notes: string;
   permissions: AdminSectionPermission[];
+  isManager: boolean;
+  managerId: string;
   active: boolean;
 };
 
@@ -41,6 +43,8 @@ const EMPTY_FORM: EmployeeFormState = {
   department: "",
   notes: "",
   permissions: ["dashboard", "knowledge"],
+  isManager: false,
+  managerId: "",
   active: true
 };
 
@@ -111,6 +115,8 @@ export function AdminEmployeesClient({
       department: employee.department,
       notes: employee.notes,
       permissions: employee.permissions,
+      isManager: employee.isManager,
+      managerId: employee.managerId,
       active: employee.active !== false
     });
   }
@@ -139,6 +145,11 @@ export function AdminEmployeesClient({
     const defaults = EMPLOYEE_ROLE_OPTIONS.find((item) => item.value === role)?.defaultPermissions ?? ["dashboard", "knowledge"];
     setForm((current) => ({ ...current, role, permissions: defaults }));
   }
+
+  const managerOptions = employees.filter(
+    (employee) => employee.isManager && employee.active !== false && employee.id !== form.id
+  );
+  const managerById = new Map(employees.map((employee) => [employee.id, employee]));
 
   return (
     <section className="adminPage">
@@ -224,6 +235,32 @@ export function AdminEmployeesClient({
             </label>
           </div>
 
+          <div className="splitGrid">
+            <label className="checkboxRow">
+              <input
+                type="checkbox"
+                checked={form.isManager}
+                onChange={(event) => setForm((current) => ({ ...current, isManager: event.target.checked }))}
+              />
+              <span>Може бути керівником у структурі</span>
+            </label>
+            <label className="formField">
+              <span>Безпосередній керівник</span>
+              <select
+                value={form.managerId}
+                onChange={(event) => setForm((current) => ({ ...current, managerId: event.target.value }))}
+              >
+                <option value="">Без керівника</option>
+                {managerOptions.map((employee) => (
+                  <option key={employee.id} value={employee.id}>
+                    {employee.lastName} {employee.firstName}
+                    {employee.position ? ` · ${employee.position}` : ""}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+
           <div className="formField">
             <span>Доступ до розділів</span>
             <div className="chips adminMultiChips">
@@ -284,6 +321,12 @@ export function AdminEmployeesClient({
                     </span>
                   </div>
                   <p><strong>{roleMeta?.label ?? employee.role}</strong> · {employee.department || "Без відділу"}</p>
+                  <p>
+                    {employee.isManager ? "Керівник у структурі" : "Лінійний співробітник"}
+                    {employee.managerId && managerById.get(employee.managerId)
+                      ? ` · Керівник: ${managerById.get(employee.managerId)?.lastName} ${managerById.get(employee.managerId)?.firstName}`
+                      : ""}
+                  </p>
                   <p>{employee.email}{employee.phone ? ` · ${employee.phone}` : ""}</p>
                   <p>Доступи: {employee.permissions.map((permission) => ADMIN_PERMISSION_OPTIONS.find((item) => item.value === permission)?.label ?? permission).join(", ")}</p>
                   {employee.notes ? <p>{employee.notes}</p> : null}

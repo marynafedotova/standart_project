@@ -40,6 +40,8 @@ function employeeFromRow(row: {
   department: string;
   notes: string;
   permissions: unknown;
+  isManager: boolean;
+  managerId: string | null;
   active: boolean;
   createdAt: Date;
   updatedAt: Date;
@@ -58,6 +60,8 @@ function employeeFromRow(row: {
     department: row.department,
     notes: row.notes,
     permissions: Array.isArray(row.permissions) ? (row.permissions as AdminSectionPermission[]) : [],
+    isManager: row.isManager,
+    managerId: row.managerId ?? "",
     active: row.active,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString()
@@ -135,6 +139,7 @@ export async function saveEmployee(
   const permissions = uniquePermissions(
     input.permissions && input.permissions.length > 0 ? input.permissions : existingPermissions.length > 0 ? existingPermissions : roleDefaults
   );
+  const managerId = input.managerId?.trim() && input.managerId.trim() !== id ? input.managerId.trim() : "";
 
   const nextRecord: EmployeeRecord = {
     id,
@@ -150,6 +155,8 @@ export async function saveEmployee(
     department: input.department?.trim() ?? "",
     notes: input.notes?.trim() ?? "",
     permissions,
+    isManager: input.isManager ?? existing?.isManager ?? false,
+    managerId,
     active: input.active ?? true,
     createdAt: existing?.createdAt.toISOString() ?? timestamp,
     updatedAt: timestamp
@@ -170,6 +177,8 @@ export async function saveEmployee(
       department: nextRecord.department,
       notes: nextRecord.notes,
       permissions: nextRecord.permissions,
+      isManager: nextRecord.isManager,
+      managerId: nextRecord.managerId || null,
       active: nextRecord.active
     },
     create: {
@@ -186,6 +195,8 @@ export async function saveEmployee(
       department: nextRecord.department,
       notes: nextRecord.notes,
       permissions: nextRecord.permissions,
+      isManager: nextRecord.isManager,
+      managerId: nextRecord.managerId || null,
       active: nextRecord.active
     }
   });

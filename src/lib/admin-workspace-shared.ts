@@ -25,6 +25,8 @@ export type EmployeeRecord = {
   department: string;
   notes: string;
   permissions: AdminSectionPermission[];
+  isManager: boolean;
+  managerId: string;
   active: boolean;
   createdAt: string;
   updatedAt: string;

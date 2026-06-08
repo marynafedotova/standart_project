@@ -18,12 +18,21 @@ function getPermissionLabel(permission: AdminSectionPermission) {
   return ADMIN_PERMISSION_OPTIONS.find((item) => item.value === permission)?.label ?? permission;
 }
 
+function getEmployeeName(employee?: EmployeeRecord) {
+  if (!employee) {
+    return "";
+  }
+
+  return `${employee.lastName} ${employee.firstName}`.trim();
+}
+
 function csvCell(value: string | number | boolean | null | undefined) {
   const normalized = String(value ?? "").replace(/\r?\n/g, " ").trim();
   return `"${normalized.replace(/"/g, '""')}"`;
 }
 
 function buildEmployeesCsv(employees: EmployeeRecord[]) {
+  const employeeById = new Map(employees.map((employee) => [employee.id, employee]));
   const header = [
     "Прізвище",
     "Ім'я",
@@ -33,6 +42,8 @@ function buildEmployeesCsv(employees: EmployeeRecord[]) {
     "Телефон",
     "Email",
     "Логін",
+    "Керівник",
+    "Може бути керівником",
     "Дата народження",
     "Статус",
     "Доступи"
@@ -47,6 +58,8 @@ function buildEmployeesCsv(employees: EmployeeRecord[]) {
     employee.phone,
     employee.email,
     employee.login,
+    getEmployeeName(employeeById.get(employee.managerId)),
+    employee.isManager ? "Так" : "Ні",
     employee.birthDate,
     employee.active === false ? "Вимкнено" : "Активний",
     employee.permissions.map(getPermissionLabel).join(", ")
@@ -56,6 +69,8 @@ function buildEmployeesCsv(employees: EmployeeRecord[]) {
 }
 
 export function AdminEmployeesListClient({ employees }: { employees: EmployeeRecord[] }) {
+  const employeeById = new Map(employees.map((employee) => [employee.id, employee]));
+
   function handleExport() {
     const csv = buildEmployeesCsv(employees);
     const blob = new Blob([`\uFEFF${csv}`], { type: "text/csv;charset=utf-8" });
@@ -102,6 +117,7 @@ export function AdminEmployeesListClient({ employees }: { employees: EmployeeRec
               <th>Посада</th>
               <th>Відділ</th>
               <th>Роль</th>
+              <th>Керівник</th>
               <th>Контакти</th>
               <th>Статус</th>
               <th>Дія</th>
@@ -120,6 +136,15 @@ export function AdminEmployeesListClient({ employees }: { employees: EmployeeRec
                 <td>{employee.position || "Без посади"}</td>
                 <td>{employee.department || "Без відділу"}</td>
                 <td>{getRoleLabel(employee.role)}</td>
+                <td>
+                  {employee.managerId ? getEmployeeName(employeeById.get(employee.managerId)) || "Керівника не знайдено" : "Без керівника"}
+                  {employee.isManager ? (
+                    <>
+                      <br />
+                      <span className="statusBadge statusActive">Може керувати</span>
+                    </>
+                  ) : null}
+                </td>
                 <td>
                   {employee.email}
                   {employee.phone ? (
